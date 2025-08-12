@@ -16,14 +16,17 @@ export const AppLayout: React.FC = () => {
     document.body.classList.toggle('accent-amber', accent === 'amber');
   }, [accent]);
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-space text-white relative">
+      {/* background overlays */}
+      <div className="absolute inset-0 bg-grid opacity-10 pointer-events-none" />
+      <div className="absolute inset-0 bg-noise opacity-20 mix-blend-soft-light pointer-events-none" />
       <NavBar />
-  <main className="flex-1 px-6 py-8 max-w-7xl w-full mx-auto">
+  <main className="flex-1 px-6 py-8 max-w-7xl w-full mx-auto relative">
   {loading && <Loading label="Initializing" />}
   {!loading && error && <div className="text-sm text-red-400" data-testid="error-state">{error}</div>}
   {!loading && !error && <Outlet />}
       </main>
-  <footer className="text-center text-xs text-slate-600 py-6">© {new Date(currentIsoUtc()).getFullYear()} FlowLedger</footer>
+  <footer className="text-center text-xs text-white/50 py-6 relative">© {new Date(currentIsoUtc()).getFullYear()} FlowLedger</footer>
     </div>
   );
 };

@@ -17,11 +17,14 @@ export default {
             900: '#0F172A'
           },
           mint: '#34D399',
-          amber: '#F59E0B'
+          amber: '#F59E0B',
+          cyan: '#22D3EE'
         }
       },
       boxShadow: {
-        soft: '0 4px 16px -4px rgba(0,0,0,0.15)'
+        soft: '0 4px 16px -4px rgba(0,0,0,0.15)',
+        glow: '0 0 18px rgba(52, 211, 153, 0.35)',
+        'glow-lg': '0 0 36px rgba(52, 211, 153, 0.45)'
       },
       borderRadius: {
         '2xl': '1rem'
