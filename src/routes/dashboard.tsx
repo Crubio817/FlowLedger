@@ -4,6 +4,7 @@ import { Tile } from '../components/Tile.tsx';
 import { Rocket, FileText, Users, Map, ListChecks } from 'lucide-react';
 import { getDashboardStats, getAuditRecentTouch } from '@services/api.ts';
 import type { DashboardStats, RecentAudit } from '@store/types.ts';
+import { Gauge } from '../components/Gauge.tsx';
 
 const DashboardRoute: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -36,11 +37,11 @@ const DashboardRoute: React.FC = () => {
   const last = recent?.[0];
 
   return (
-    <div>
-      <PageHeader title="Audit Operations Dashboard" subtitle="Overview of your current audit engagement and progress across discovery assets." actions={<button className="px-4 py-2 bg-brand-mint text-brand-blue-900 rounded-full text-sm font-medium">Start New Audit</button>} />
+    <div className="space-y-8">
+      <PageHeader title="Audit Operations Dashboard" subtitle="Overview of your current audit engagement and progress across discovery assets." actions={<button className="btn-glow">Start New Audit</button>} />
 
       {/* Stat cards */}
-      <section className="grid gap-4 md:grid-cols-4">
+  <section className="grid gap-4 md:grid-cols-4">
         <StatCard label="Active Clients" value={stats?.active_clients} loading={loading} error={!!errStats} />
         <StatCard label="Audits In Progress" value={stats?.audits_in_progress} loading={loading} error={!!errStats} />
         <StatCard label="SIPOCs Completed" value={stats?.sipocs_completed} loading={loading} error={!!errStats} />
@@ -48,7 +49,7 @@ const DashboardRoute: React.FC = () => {
       </section>
 
       {/* Work at a Glance */}
-      <section className="mt-10">
+      <section className="mt-6 panel neon p-4">
         <h2 className="text-sm font-medium uppercase tracking-wide text-slate-400 mb-3">Work at a Glance</h2>
         <div className="grid gap-4 md:grid-cols-5">
           <Tile title="Resume Last Audit" description="Jump back into the most recent audit context." icon={<Rocket size={16} className="text-brand-mint"/>} />
@@ -59,8 +60,9 @@ const DashboardRoute: React.FC = () => {
         </div>
       </section>
 
-      {/* Resume last audit */}
-      <section className="mt-10 rounded-2xl border border-brand-blue-700/50 p-4 bg-brand-blue-900/30">
+      {/* Resume last audit and mini preview */}
+      <section className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="panel neon p-4">
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold">Resume Last Audit</h2>
           {errRecent && <span className="text-xs text-red-400">Couldn’t load recent audits</span>}
@@ -80,10 +82,22 @@ const DashboardRoute: React.FC = () => {
             </a>
           </div>
         )}
+        </div>
+        <div className="panel neon p-4 flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold mb-1">Mini Dashboard preview</h3>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div><div className="label">Audits</div><div className="text-2xl font-semibold">{stats?.audits_in_progress ?? 0}</div></div>
+              <div><div className="label">Findings</div><div className="text-2xl font-semibold">{stats?.sipocs_completed ?? 0}</div></div>
+              <div><div className="label">Interviews</div><div className="text-2xl font-semibold">{stats?.pending_interviews ?? 0}</div></div>
+            </div>
+          </div>
+          <Gauge value={53} />
+        </div>
       </section>
 
       {/* Recent activity list */}
-      <section className="mt-10 rounded-2xl border border-brand-blue-700/50 p-4 bg-brand-blue-900/30">
+      <section className="mt-6 panel neon p-4">
         <h2 className="font-semibold mb-3">Recent Activity</h2>
         {loading && !recent && <SkeletonList />}
         {!loading && recent && recent.length === 0 && (
@@ -107,10 +121,10 @@ export default DashboardRoute;
 
 function StatCard({ label, value, loading, error }: { label: string; value?: number; loading: boolean; error: boolean }) {
   return (
-    <div className="rounded-2xl bg-brand-blue-800 px-5 py-4 text-left shadow-soft animate-slideUp">
-      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
+    <div className="panel neon px-5 py-4 text-left animate-slideUp">
+      <div className="label">{label}</div>
       <div className="mt-1 text-2xl font-semibold text-brand-mint h-8 flex items-end">
-        {loading ? <div className="w-20 h-6 rounded bg-brand-blue-700 animate-pulse" /> :
+        {loading ? <div className="w-20 h-6 rounded bg-white/10 animate-pulse" /> :
          error ? <span className="text-red-400">—</span> :
          (value ?? 0)}
       </div>
