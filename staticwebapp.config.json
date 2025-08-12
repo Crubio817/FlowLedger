@@ -1,0 +1,9 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["*.{css,js,png,jpg,jpeg,svg,pdf}", "assets/*", "api/*"]
+  },
+  "globalHeaders": {
+    "X-Frame-Options": "SAMEORIGIN"
+  }
+}
