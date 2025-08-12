@@ -1,83 +1,112 @@
-# FlowLedger Interface
+# FlowLedger
 
-React + TypeScript + Vite frontend for audit process assets (SIPOC, Interviews, Process Maps, Findings).
+[![CI/CD](https://github.com/Crubio817/FlowLedger/actions/workflows/azure-static-web-apps.yml/badge.svg)](https://github.com/Crubio817/FlowLedger/actions/workflows/azure-static-web-apps.yml)
+
+FlowLedger is a modern, responsive web interface for managing and tracking internal audit processes. It provides auditors with a centralized platform to work with key assets like SIPOC diagrams, interview notes, process maps, and findings.
+
+Built with React, TypeScript, and Vite, it features a clean, component-based architecture and a design system powered by Tailwind CSS.
+
+## Features
+
+- **Dashboard:** At-a-glance view of in-progress audits and recent activity.
+- **SIPOC Builder:** Interactive tool to define Suppliers, Inputs, Process, Outputs, and Customers.
+- **Interview Management:** Schedule interviews and log question-and-answer sessions.
+- **Process Mapping:** Upload and manage process flow diagrams.
+- **Findings & Recommendations:** Document audit findings and track remediation.
+- **Global State Management:** Centralized, reactive state using Zustand.
+- **Typed API Layer:** End-to-end type safety with generated OpenAPI types.
+
+## Tech Stack
+
+- **Frontend:** React 18, TypeScript, Vite
+- **Styling:** Tailwind CSS, headless UI principles
+- **State Management:** Zustand
+- **Routing:** React Router v6
+- **HTTP Client:** Fetch API wrapper
+- **Testing:** Vitest, React Testing Library
+- **Deployment:** Azure Static Web Apps
+
+---
 
 ## Getting Started
 
-Requirements: Node 18+ (LTS), npm 9+
+### Prerequisites
 
-Install dependencies:
-```
-npm i
-```
-Development server:
-```
-npm run dev
-```
-Type check:
-```
-npm run typecheck
-```
-Lint:
-```
-npm run lint
-```
-Build production:
-```
-npm run build
-```
-Preview build:
-```
-npm run preview
-```
-Run smoke tests (after adding tests):
-```
-npm run test
-```
+- [Node.js](https://nodejs.org/) (v20.x or later)
+- [npm](https://www.npmjs.com/) (v9.x or later)
+- A running instance of the [FlowLedger backend API](https://github.com/your-org/flowledger-api) on `http://localhost:4000`.
 
-## API types generation (OpenAPI)
-Generate typed API definitions from the backend OpenAPI spec:
-```
-npm run gen:api
-```
-This fetches `http://localhost:4000/openapi.json` and writes `src/services/types.gen.ts` using `openapi-typescript`.
-Make sure your backend is running locally on port 4000.
+### Installation & Setup
 
-## Feature Flags
-Amber accent toggle enabled via store; future flags in `src/config.ts`.
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/Crubio817/FlowLedger.git
+    cd FlowLedger
+    ```
 
-## Deploy (Azure Static Web Apps)
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-This repo is wired for Azure Static Web Apps (Standard).
+3.  **Local Development:**
+    For local development, the app expects the backend API to be running on `http://localhost:4000`. The Vite development server will proxy all requests from `/api` to this backend.
 
-1) Set repository secret `AZURE_STATIC_WEB_APPS_API_TOKEN` from your Static Web App resource (Deployment token).
-2) Ensure `VITE_API_BASE_URL` is set (workflow sets it to the production Function App by default).
-3) Push to `main` — GitHub Actions will build and upload `/dist` to your Static Web App.
+    Start the development server:
+    ```bash
+    npm run dev
+    ```
+    The application will be available at `http://localhost:5173`.
 
-SPA routing is configured via `staticwebapp.config.json` to rewrite to `index.html`.
+---
 
-## Architecture
-- All domain types in `src/store/types.ts` (single source of truth)
-- Mocks in `src/data/mock.ts`
-- Service layer `src/services/api.ts` (only data access; simulated latency + random failures)
-- State via Zustand `src/store/useAppStore.ts`
-- Routes under `src/routes/*` (lazy loaded)
-- Shared components `src/components/*`
-- Utilities `src/utils/*`
+## Key Scripts
 
-## Styling & Tokens
-Tailwind with custom colors: deep blues (#0F172A / #111827) and accent mint (#34D399) / optional amber (#F59E0B). Use classes, avoid raw hex outside config.
+- `npm run dev`: Starts the Vite development server with hot-reloading.
+- `npm run build`: Compiles and bundles the app for production into the `/dist` directory.
+- `npm run preview`: Serves the production build locally to preview before deployment.
+- `npm run test`: Runs unit and integration tests with Vitest.
+- `npm run typecheck`: Verifies TypeScript types across the project.
+- `npm run lint`: Lints the codebase with ESLint.
+- `npm run gen:api`: Generates TypeScript types from the backend's OpenAPI schema. Requires the backend to be running locally.
 
-## Error Simulation
-Services randomly throw (10% rate). Handle UI error states per page.
+---
 
-## Future Backend Swap
-Replace TODO comments in `services/api.ts` with real fetch calls pointing at `/api/v1/...` defined in `config.ts`.
+## API Configuration
+
+The API base URL is resolved dynamically based on the environment:
+
+1.  **`.env` file:** `VITE_API_BASE_URL` in a `.env` file will always take precedence.
+2.  **Development:** When running `npm run dev`, it defaults to `/api`. This uses Vite's proxy to redirect requests to your local backend at `http://localhost:4000`, avoiding CORS issues. This is configured in `vite.config.ts` and `.env.development`.
+3.  **Production:** In a production build, it defaults to the deployed Azure Function URL specified in the GitHub Actions workflow (`https://flowledger-api-func.azurewebsites.net/api`).
+
+This ensures a seamless development experience while maintaining a production-ready configuration for deployment.
+
+---
+
+## Deployment
+
+This repository is configured for continuous deployment to **Azure Static Web Apps**.
+
+- **Trigger:** A push or PR to the `main` branch will trigger the GitHub Actions workflow defined in `.github/workflows/azure-static-web-apps.yml`.
+- **Process:** The workflow installs dependencies, runs tests and type checks, builds the application, and deploys the `/dist` folder to Azure.
+- **API Connection:** The production `VITE_API_BASE_URL` is injected at build time via a GitHub Actions secret, linking the frontend to the live Azure Function API.
+
+The `staticwebapp.config.json` file ensures that all routes are handled by the React application (SPA fallback).
+
+---
 
 ## Troubleshooting
-- If build fails on plugin not found, ensure dev deps installed (`npm i`).
-- Clear Vite cache: `rm -rf node_modules/.vite`.
-- Type path issues: run `npm run typecheck` to surface path mapping errors.
 
-## License
-Internal (proprietary) – pending clarification.
+- **`net::ERR_NAME_NOT_RESOLVED` in Browser:**
+  - **In Local Dev:** This error means the app is trying to call the production Azure API instead of your local proxy. Ensure you are running `npm run dev` and that your `.env.development` file is correctly setting `VITE_API_BASE_URL=/api`. Also, confirm your local backend is running on port 4000.
+  - **In Production:** This indicates the Azure Function App hostname is incorrect, not running, or not publicly accessible. Verify the `VITE_API_BASE_URL` in the GitHub Actions workflow matches the URL of your deployed Azure Function.
+
+- **Favicon 404 Error:**
+  A default `favicon.svg` has been added to the `/public` directory and is referenced in `index.html`. This should resolve any 404 errors for the site icon.
+
+- **Type Errors after `git pull`:**
+  If you encounter type-related issues, regenerate the API types to sync with the latest backend changes:
+  ```bash
+  npm run gen:api
+  ```
