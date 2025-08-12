@@ -1,7 +1,12 @@
 // Typed HTTP client wrapper using fetch and OpenAPI-generated types.
-// Base URL resolved from VITE_API_BASE_URL or defaults to production Function App
+// Base URL resolution order:
+// 1) VITE_API_BASE_URL env
+// 2) In dev: "/api" to use Vite's proxy to localhost backend
+// 3) In prod: Azure Function default URL
 
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'https://flowledger-api-func.azurewebsites.net/api';
+const env = (import.meta as any).env || {};
+export const API_BASE_URL: string = env.VITE_API_BASE_URL
+  || (env.DEV ? '/api' : 'https://flowledger-api-func.azurewebsites.net/api');
 
 export type HttpError = { code: number; message: string };
 
