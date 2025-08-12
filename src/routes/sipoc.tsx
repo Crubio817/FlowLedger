@@ -11,7 +11,9 @@ function ensureStrings(arr?: unknown[]): string[] {
 }
 
 export default function SipocRoute() {
-  const auditId = Number(new URLSearchParams(location.search).get('auditId') ?? 1);
+  const qs = new URLSearchParams(location.search);
+  const auditIdParam = qs.get('auditId');
+  const auditId = auditIdParam ? Number(auditIdParam) : NaN;
 
   const [doc, setDoc] = useState<SipocDoc | null>(null);
   const [saving, setSaving] = useState(false);
@@ -21,6 +23,7 @@ export default function SipocRoute() {
   useUnsavedGuard(dirty);
 
   useEffect(() => {
+    if (!Number.isFinite(auditId)) { setError('Missing auditId'); return; }
     (async () => {
       try {
         const d = await getSipoc(auditId);

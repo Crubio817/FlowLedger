@@ -18,8 +18,8 @@ interface AppState {
   init: () => Promise<void>;
   toggleAccent: () => void;
   setSipocVersion: (v: 'current' | 'future') => void;
-  loadSipoc: () => Promise<void>;
-  saveSipoc: (doc: SipocDoc) => Promise<void>;
+  loadSipoc: (auditId: number) => Promise<void>;
+  saveSipoc: (auditId: number, doc: SipocDoc) => Promise<void>;
   pushToast: (message: string) => void;
   addActivity: (item: Omit<ActivityItem,'id'|'timestamp'> & { title: string }) => void;
 }
@@ -37,23 +37,23 @@ const creator: StateCreator<AppState> = (set, get) => ({
   init: async () => {
     set({ loading: true, error: undefined });
     try {
-      const [sipoc, questions] = await Promise.all([
-        api.getSipoc(101),
+      const [questions] = await Promise.all([
         api.getQuestionBank()
       ]);
-      set({ sipoc, questions, loading: false });
+      // Do not fetch SIPOC by default; require an explicit auditId from the page
+      set({ questions, loading: false });
     } catch (e: any) {
       set({ error: e?.message || 'Unknown error', loading: false });
     }
   },
   toggleAccent: () => set(s => ({ accent: s.accent === 'mint' ? 'amber' : 'mint' })),
   setSipocVersion: (v: 'current' | 'future') => set({ sipocVersion: v }),
-  loadSipoc: async () => {
-    const doc = await api.getSipoc(101);
+  loadSipoc: async (auditId: number) => {
+    const doc = await api.getSipoc(auditId);
     set({ sipoc: doc });
   },
-  saveSipoc: async (doc: SipocDoc) => {
-    const saved = await api.putSipoc(101, doc);
+  saveSipoc: async (auditId: number, doc: SipocDoc) => {
+    const saved = await api.putSipoc(auditId, doc);
     set({ sipoc: saved });
     get().pushToast('SIPOC saved');
     get().addActivity({ title: 'Saved SIPOC', type: 'SIPOC', auditId: doc.audit_id });
