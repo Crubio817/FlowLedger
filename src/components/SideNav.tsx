@@ -39,7 +39,9 @@ export const SideNav: React.FC = () => {
       {collapsed ? (
         <>
           <div className="flex flex-col items-center pt-8 pb-2">
-            <div className="w-12 h-12 rounded-sm bg-orange-600 mb-2" />
+            <div className="w-12 h-12 flex items-center justify-center mb-2 text-4xl" style={{ background: 'transparent' }}>
+              <span role="img" aria-label="logo">😊</span>
+            </div>
             <button
               onClick={() => setCollapsed(false)}
               className="w-9 h-9 flex items-center justify-center text-gray-300"
@@ -64,9 +66,9 @@ export const SideNav: React.FC = () => {
           </div>
         </>
       ) : (
-        <>
+        <div style={{ background: '#181818', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div className="flex flex-col items-center pt-8 pb-2">
-            <div className="text-2xl font-bold mb-2">FlowLedger</div>
+            <div className="text-base font-semibold mb-2">FlowLedger</div>
             <button
               onClick={() => setCollapsed(true)}
               className="w-9 h-9 flex items-center justify-center text-gray-300"
@@ -81,11 +83,11 @@ export const SideNav: React.FC = () => {
                 <NavLink
                   key={link.to}
                   to={link.to}
-                  className={({ isActive }) =>
-                    isActive
-                      ? 'flex items-center gap-3 px-3 py-2 cursor-pointer font-bold text-white text-lg'
-                      : 'flex items-center gap-3 px-3 py-2 cursor-pointer text-gray-300 text-lg'
-                  }
+                        className={({ isActive }) =>
+                          isActive
+                            ? 'flex items-center gap-3 px-3 py-2 cursor-pointer font-bold text-white text-lg bg-[#111] rounded-lg shadow-inner'
+                            : 'flex items-center gap-3 px-3 py-2 cursor-pointer text-gray-300 text-lg'
+                        }
                 >
                   <div className="w-6 text-gray-300">{link.icon}</div>
                   <div>{link.label}</div>
@@ -93,10 +95,7 @@ export const SideNav: React.FC = () => {
               ))}
             </nav>
           </div>
-          <div className="px-4 py-3 text-xs text-gray-400">
-            © {new Date().getFullYear()}
-          </div>
-        </>
+        </div>
       )}
     </aside>
   );

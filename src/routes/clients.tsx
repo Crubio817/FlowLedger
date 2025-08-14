@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { getClientsOverview } from '../services/api.ts';
 import type { ClientsOverviewItem } from '../services/models.ts';
 import { formatUtc } from '../utils/date.ts';
+import StatCard from '../components/StatCard.tsx';
 
 const badgeBase = 'inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium';
 
@@ -29,18 +29,52 @@ export const ClientsRoute: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
+  // KPI metrics
+  const totalClients = rows.length;
+  const activeClients = rows.filter(r => r.is_active).length;
+  const onboardingTasks = rows.reduce((sum, r) => sum + (r.pending_onboarding_tasks ?? 0), 0);
+  const totalEngagements = rows.reduce((sum, r) => sum + (r.engagement_count ?? 0), 0);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold mb-1">Clients Overview</h1>
+      <div className="mb-2">
+        <div className="flex items-center justify-between mb-0">
+          <h1 className="text-xl font-semibold">Clients Overview</h1>
+          <button
+            className="flex items-center justify-center font-semibold transition border-none"
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'linear-gradient(180deg, #232323 0%, #181818 100%)',
+              color: '#fff',
+              boxShadow: '8px 8px 24px #111, -8px -8px 24px #222, inset 2px 2px 8px #333, inset -2px -2px 8px #000',
+              fontSize: '1.2rem',
+              outline: '2px solid #fff2',
+            }}
+            onClick={() => alert('Add new client (not yet implemented)')}
+            title="Add New Client"
+          >
+            <span style={{fontWeight:600, fontSize:'1.5rem'}}>+</span>
+          </button>
+        </div>
         <p className="text-sm text-[var(--text-2)]">Snapshot of client engagement & onboarding signals.</p>
       </div>
-      <div className="card overflow-auto">
+      {/* KPI Cards */}
+  {!loading && !error && Array.isArray(rows) && rows.length > 0 && (
+        <div className="flex gap-6 mb-4 mt-2">
+          <StatCard label="Total Clients" value={totalClients} color="#6366f1" />
+          <StatCard label="Active Clients" value={activeClients} color="#4ade80" />
+          <StatCard label="Onboarding Tasks" value={onboardingTasks} color="#60a5fa" />
+          <StatCard label="Engagements" value={totalEngagements} color="#fbbf24" />
+        </div>
+      )}
+      <div className="card overflow-auto" style={{ background: '#181818' }}>
         {loading && <div className="p-6 text-sm text-[var(--text-2)]">Loading…</div>}
         {!loading && error && <div className="p-6 text-sm text-red-400">{error}</div>}
-        {!loading && !error && rows.length === 0 && <div className="p-6 text-sm text-[var(--text-2)]">No clients found.</div>}
-        {!loading && !error && rows.length > 0 && (
-          <table className="w-full text-sm">
+        {!loading && !error && Array.isArray(rows) && rows.length === 0 && <div className="p-6 text-sm text-[var(--text-2)]">No clients found.</div>}
+        {!loading && !error && Array.isArray(rows) && rows.length > 0 && (
+          <table className="w-full text-sm" style={{ background: '#181818' }}>
             <thead className="text-left text-[var(--text-2)] border-b border-[var(--border-subtle)]">
               <tr>
                 <th className="py-2 px-3 font-medium">Client</th>
@@ -55,12 +89,12 @@ export const ClientsRoute: React.FC = () => {
             </thead>
             <tbody>
               {rows.map(r => {
-                const tags: string[] = (r.tags || '')
+                const tags = (r.tags || '')
                   .split(',')
-                  .map((t: string) => t.trim())
-                  .filter((t: string) => Boolean(t));
+                  .map(t => t.trim())
+                  .filter(Boolean);
                 return (
-                  <tr key={r.client_id} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--surface-3)] transition-colors">
+                  <tr key={r.client_id} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-black transition-colors" style={{ background: '#181818' }}>
                     <td className="py-2 px-3 font-medium">{r.client_name}</td>
                     <td className="py-2 px-3">
                       <span className={badgeBase + ' ' + (r.is_active ? 'bg-emerald-400/90 text-black' : 'bg-[var(--surface-4)] text-[var(--text-2)]')}>{r.is_active ? 'Yes' : 'No'}</span>
@@ -75,8 +109,9 @@ export const ClientsRoute: React.FC = () => {
                     </td>
                     <td className="py-2 px-3">
                       <div className="flex flex-wrap gap-1">
-                        {tags.map((tag: string) => <span key={tag} className={badgeBase + ' bg-[var(--surface-4)] text-[var(--text-2)]'}>{tag}</span>)}
-                        {tags.length === 0 && <span className="opacity-60">—</span>}
+                        {tags.length > 0
+                          ? tags.map(tag => <span key={tag} className={badgeBase + ' bg-[var(--surface-4)] text-[var(--text-2)]'}>{tag}</span>)
+                          : <span className="opacity-60">—</span>}
                       </div>
                     </td>
                     <td className="py-2 px-3">{r.engagement_count ?? 0}</td>

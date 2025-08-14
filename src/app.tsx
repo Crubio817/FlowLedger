@@ -23,7 +23,16 @@ export const AppLayout: React.FC = () => {
   return (
     <div className="app-shell">
       <SideNav />
-      <div className="workspace">
+      <div
+        className="workspace"
+        style={{
+          backgroundColor: '#101010',
+          backgroundImage:
+            'linear-gradient(to right, rgba(255,255,255,0.012) 1px, transparent 1px), ' +
+            'linear-gradient(to bottom, rgba(255,255,255,0.012) 1px, transparent 1px)',
+          backgroundSize: '20px 20px',
+        }}
+      >
         <main className="workspace-main pt-8">
           {loading && <Loading label="Initializing" />}
           {!loading && error && <div className="text-sm text-red-400" data-testid="error-state">{error}</div>}
