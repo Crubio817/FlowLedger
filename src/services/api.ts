@@ -1,5 +1,6 @@
 import { toast } from '../lib/toast.ts';
 import { http } from './client.ts';
+// Using generated OpenAPI schema aliases
 import type {
   DashboardStats,
   RecentAudit,
@@ -7,12 +8,15 @@ import type {
   Interview,
   InterviewResponse,
   Finding,
-  Question,
   ProcessMap,
   UploadUrlResponse,
-} from '../store/types.ts';
+  ClientsOverviewItem,
+  PageMeta,
+} from './models.ts';
+// Local question bank placeholder type (not yet in spec)
+export type Question = { id: string; text: string };
 
-type PageMeta = { page: number; limit: number; total?: number };
+export type ApiEnvelope<T> = { status: string; data: T; meta?: PageMeta & Record<string, any> };
 
 function withErrors<T>(fn: () => Promise<T>, errMsg = 'Request failed'): Promise<T> {
   return fn().catch((e: any) => {
@@ -122,9 +126,9 @@ export async function getQuestionBank(): Promise<Question[]> {
   return [];
 }
 
-// Additional: Clients and Audits endpoints
-export type Client = { client_id: number; name: string };
-export type Audit = { audit_id: number; client_id: number; title: string; status: string };
+// Additional: Clients and Audits endpoints (spec currently provides list shapes inline)
+export type Client = { client_id?: number; name?: string; is_active?: boolean; created_utc?: string };
+export type Audit = { audit_id?: number; client_id?: number; title?: string; status?: string; created_utc?: string; updated_utc?: string };
 
 export async function listClients(page = 1, limit = 20, sort = 'name', order: 'asc' | 'desc' = 'asc'):
   Promise<{ data: Client[]; meta?: PageMeta }> {
@@ -132,8 +136,18 @@ export async function listClients(page = 1, limit = 20, sort = 'name', order: 'a
   return withErrors(() => http.get(`/clients?${q}`), 'Failed to load clients');
 }
 
+// Create client (spec snapshot currently lacks POST /clients; backend supports it)
+export async function createClient(name: string, is_active = true): Promise<{ status?: string; data?: { client_id?: number } }> {
+  return withErrors(() => http.post('/clients', { name, is_active }), 'Create client failed');
+}
+
 export async function listAudits(page = 1, limit = 20, sort = 'created_utc', order: 'asc' | 'desc' = 'desc'):
   Promise<{ data: Audit[]; meta?: PageMeta }> {
   const q = new URLSearchParams({ page: String(page), limit: String(limit), sort, order });
   return withErrors(() => http.get(`/audits?${q}`), 'Failed to load audits');
+}
+
+export async function getClientsOverview(limit = 50): Promise<ApiEnvelope<ClientsOverviewItem[]>> {
+  const q = new URLSearchParams({ limit: String(limit) });
+  return withErrors(() => http.get<ApiEnvelope<ClientsOverviewItem[]>>(`/clients-overview?${q}`), 'Failed to load clients overview');
 }

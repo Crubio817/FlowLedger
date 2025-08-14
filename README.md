@@ -68,7 +68,26 @@ Built with React, TypeScript, and Vite, it features a clean, component-based arc
 - `npm run test`: Runs unit and integration tests with Vitest.
 - `npm run typecheck`: Verifies TypeScript types across the project.
 - `npm run lint`: Lints the codebase with ESLint.
-- `npm run gen:api`: Generates TypeScript types from the backend's OpenAPI schema. Requires the backend to be running locally.
+- `npm run gen:api`: Generates TypeScript types directly from the live backend's OpenAPI schema (no snapshot). Requires backend running.
+- `npm run gen:api:snapshot`: Fetches the OpenAPI spec, stores/updates `api-spec.snapshot.json`, then generates types. Prefer this for commits so spec + types version together.
+
+### Regenerating API Types
+
+When the DB / API schema changes:
+
+1. Run / update backend so the new schema is reflected at `http://localhost:4000/openapi.json`.
+2. Execute:
+  ```bash
+  npm run gen:api:snapshot
+  ```
+3. Commit BOTH `api-spec.snapshot.json` and `src/services/types.gen.ts`.
+
+Why snapshot? It lets reviewers diff the API spec separately from code changes and prevents silent drift if the live backend changes later.
+
+Quick direct regen (no snapshot persistence):
+```bash
+npm run gen:api
+```
 
 ---
 

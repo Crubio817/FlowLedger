@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getSipoc, putSipoc } from '@services/api.ts';
-import type { SipocDoc } from '@store/types.ts';
+import type { SipocDoc as ApiSipocDoc } from '../services/models.ts';
+// Extend to include required audit_id locally (backend schema omits it in spec for now)
+interface SipocDoc extends ApiSipocDoc { audit_id?: number }
 import { toast } from '../lib/toast.ts';
 import { useUnsavedGuard } from '../hooks/useUnsavedGuard.ts';
 import { savedToast } from '../lib/saveNotifier.ts';
@@ -110,7 +112,7 @@ export default function SipocRoute() {
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">SIPOC — Audit #{auditId}</h1>
         <div className="text-sm opacity-70">
-          {saving ? 'Saving…' : dirty ? 'Unsaved changes' : doc.updated_utc ? `Updated ${new Date(doc.updated_utc).toLocaleString()}` : ''}
+          {saving ? 'Saving…' : dirty ? 'Unsaved changes' : ''}
         </div>
       </header>
 
@@ -129,14 +131,14 @@ export default function SipocRoute() {
       }}/>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <SipocColumn title="Suppliers" items={doc.suppliers_json} onChange={(i,v)=>onArrayChange('suppliers_json', i, v)} onAdd={()=>onAddRow('suppliers_json')} onDelete={(i)=>onDeleteRow('suppliers_json', i)} />
-        <SipocColumn title="Inputs" items={doc.inputs_json} onChange={(i,v)=>onArrayChange('inputs_json', i, v)} onAdd={()=>onAddRow('inputs_json')} onDelete={(i)=>onDeleteRow('inputs_json', i)} />
-        <SipocColumn title="Process" items={doc.process_json} hint={processHint} onChange={(i,v)=>onArrayChange('process_json', i, v)} onAdd={()=>onAddRow('process_json')} onDelete={(i)=>onDeleteRow('process_json', i)} />
-        <SipocColumn title="Outputs" items={doc.outputs_json} onChange={(i,v)=>onArrayChange('outputs_json', i, v)} onAdd={()=>onAddRow('outputs_json')} onDelete={(i)=>onDeleteRow('outputs_json', i)} />
-        <SipocColumn title="Customers" items={doc.customers_json} onChange={(i,v)=>onArrayChange('customers_json', i, v)} onAdd={()=>onAddRow('customers_json')} onDelete={(i)=>onDeleteRow('customers_json', i)} />
+  <SipocColumn title="Suppliers" items={doc.suppliers_json || []} onChange={(i,v)=>onArrayChange('suppliers_json', i, v)} onAdd={()=>onAddRow('suppliers_json')} onDelete={(i)=>onDeleteRow('suppliers_json', i)} />
+  <SipocColumn title="Inputs" items={doc.inputs_json || []} onChange={(i,v)=>onArrayChange('inputs_json', i, v)} onAdd={()=>onAddRow('inputs_json')} onDelete={(i)=>onDeleteRow('inputs_json', i)} />
+  <SipocColumn title="Process" items={doc.process_json || []} hint={processHint} onChange={(i,v)=>onArrayChange('process_json', i, v)} onAdd={()=>onAddRow('process_json')} onDelete={(i)=>onDeleteRow('process_json', i)} />
+  <SipocColumn title="Outputs" items={doc.outputs_json || []} onChange={(i,v)=>onArrayChange('outputs_json', i, v)} onAdd={()=>onAddRow('outputs_json')} onDelete={(i)=>onDeleteRow('outputs_json', i)} />
+  <SipocColumn title="Customers" items={doc.customers_json || []} onChange={(i,v)=>onArrayChange('customers_json', i, v)} onAdd={()=>onAddRow('customers_json')} onDelete={(i)=>onDeleteRow('customers_json', i)} />
       </div>
 
-      <MetricsEditor value={doc.metrics_json ?? {}} onChange={(m)=>{ setDoc(prev => prev ? ({...prev, metrics_json: m}) : prev); setDirty(true); }} />
+  <MetricsEditor value={doc.metrics_json as any as Record<string,string|number|boolean> ?? {}} onChange={(m)=>{ setDoc(prev => prev ? ({...prev, metrics_json: m}) : prev); setDirty(true); }} />
     </main>
   );
 }

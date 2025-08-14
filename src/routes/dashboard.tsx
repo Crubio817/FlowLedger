@@ -1,150 +1,88 @@
 import React, { useEffect, useState } from 'react';
-import { PageHeader } from '../components/PageHeader.tsx';
-import { Tile } from '../components/Tile.tsx';
-import { Rocket, FileText, Users, Map, ListChecks } from 'lucide-react';
-import { getDashboardStats, getAuditRecentTouch } from '@services/api.ts';
-import type { DashboardStats, RecentAudit } from '@store/types.ts';
-import { Gauge } from '../components/Gauge.tsx';
+import { getClientsOverview } from '../services/api.ts';
+import type { ClientsOverviewItem } from '../services/models.ts';
+import { formatUtc } from '../utils/date.ts';
 
 const DashboardRoute: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recent, setRecent] = useState<RecentAudit[] | null>(null);
+  const [rows, setRows] = useState<ClientsOverviewItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [errStats, setErrStats] = useState<string | null>(null);
-  const [errRecent, setErrRecent] = useState<string | null>(null);
+  const [error, setError] = useState<string|undefined>();
 
   useEffect(() => {
-    let cancelled = false;
     (async () => {
-      setLoading(true);
       try {
-        const [sPromise, rPromise] = [getDashboardStats(), getAuditRecentTouch(1, 7)];
-        const [s, r] = await Promise.allSettled([sPromise, rPromise]);
-        if (cancelled) return;
-
-        if (s.status === 'fulfilled') setStats(s.value);
-        else setErrStats(s.reason?.message || 'Failed to load stats');
-
-        if (r.status === 'fulfilled') setRecent(r.value);
-        else setErrRecent(r.reason?.message || 'Failed to load recent activity');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+        setLoading(true);
+        const res = await getClientsOverview(10); // grab first 10
+        setRows(res.data || []);
+      } catch (e:any) {
+        setError(e?.message || 'Failed to load overview');
+      } finally { setLoading(false); }
     })();
-    return () => { cancelled = true; };
   }, []);
 
-  const last = recent?.[0];
-
   return (
-    <div className="space-y-8">
-      <PageHeader title="Audit Operations Dashboard" subtitle="Overview of your current audit engagement and progress across discovery assets." actions={<button className="btn-glow">Start New Audit</button>} />
-
-      {/* Stat cards */}
-  <section className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Active Clients" value={stats?.active_clients} loading={loading} error={!!errStats} />
-        <StatCard label="Audits In Progress" value={stats?.audits_in_progress} loading={loading} error={!!errStats} />
-        <StatCard label="SIPOCs Completed" value={stats?.sipocs_completed} loading={loading} error={!!errStats} />
-        <StatCard label="Pending Interviews" value={stats?.pending_interviews} loading={loading} error={!!errStats} />
-      </section>
-
-      {/* Work at a Glance */}
-      <section className="mt-6 panel neon p-4">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-slate-400 mb-3">Work at a Glance</h2>
-        <div className="grid gap-4 md:grid-cols-5">
-          <Tile title="Resume Last Audit" description="Jump back into the most recent audit context." icon={<Rocket size={16} className="text-brand-mint"/>} />
-          <Tile title="SIPOC Builder" description="Structure suppliers, inputs, process, outputs, and customers." icon={<FileText size={16} className="text-brand-mint"/>} />
-          <Tile title="Interview Manager" description="Schedule, conduct, and capture stakeholder interviews." icon={<Users size={16} className="text-brand-mint"/>} />
-          <Tile title="Process Map" description="Upload or draw process flows and BPMN diagrams." icon={<Map size={16} className="text-brand-mint"/>} />
-          <Tile title="Findings & Recs" description="Curate pain points and actionable recommendations." icon={<ListChecks size={16} className="text-brand-mint"/>} />
+    <div className="space-y-8" data-testid="dashboard-new">
+      <header>
+        <h1 className="text-xl font-semibold">Dashboard</h1>
+        <p className="text-sm text-[var(--text-2)]">Operational snapshot from clients overview.</p>
+      </header>
+<<<<<<< Updated upstream
+      {!loading && !error && rows.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Stat title="Total Clients" value={rows.length} />
+          <Stat title="Active %" value={(() => { const active = rows.filter(r=>r.is_active).length; return rows.length? ((active/rows.length*100)|0)+'%':''; })()} />
+          <Stat title="Total Engagements" value={rows.reduce((a,r)=>a+(r.engagement_count||0),0)} />
+          <Stat title="Pending Tasks" value={rows.reduce((a,r)=>a+(r.pending_onboarding_tasks||0),0)} />
         </div>
-      </section>
-
-      {/* Resume last audit and mini preview */}
-      <section className="mt-6 grid gap-4 md:grid-cols-2">
-        <div className="panel neon p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold">Resume Last Audit</h2>
-          {errRecent && <span className="text-xs text-red-400">Couldn’t load recent audits</span>}
-        </div>
-        {loading && !recent && <SkeletonLine />}
-        {!loading && !last && !errRecent && (
-          <div className="text-sm opacity-70">No recent audits yet.</div>
-        )}
-        {last && (
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <div className="font-medium">{last.title} · {last.status}</div>
-              <div className="opacity-70">{formatLocal(last.last_touched_utc)}</div>
-            </div>
-            <a className="text-sm underline" href={`/audits/${last.audit_id}`}>
-              Open
-            </a>
-          </div>
-        )}
-        </div>
-        <div className="panel neon p-4 flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold mb-1">Mini Dashboard preview</h3>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div><div className="label">Audits</div><div className="text-2xl font-semibold">{stats?.audits_in_progress ?? 0}</div></div>
-              <div><div className="label">Findings</div><div className="text-2xl font-semibold">{stats?.sipocs_completed ?? 0}</div></div>
-              <div><div className="label">Interviews</div><div className="text-2xl font-semibold">{stats?.pending_interviews ?? 0}</div></div>
-            </div>
-          </div>
-          <Gauge value={53} />
-        </div>
-      </section>
-
-      {/* Recent activity list */}
-      <section className="mt-6 panel neon p-4">
-        <h2 className="font-semibold mb-3">Recent Activity</h2>
-        {loading && !recent && <SkeletonList />}
-        {!loading && recent && recent.length === 0 && (
-          <div className="text-sm opacity-70">No activity yet.</div>
-        )}
-        {!loading && recent && recent.length > 0 && (
-          <ul className="space-y-2">
-            {recent.map((a) => (
-              <li key={`${a.audit_id}-${a.last_touched_utc}`} className="text-sm flex justify-between">
-                <span>{a.title} · {a.status}</span>
-                <span className="opacity-70">{formatLocal(a.last_touched_utc)}</span>
-              </li>
-            ))}
-          </ul>
+      )}
+=======
+      {/* KPIs moved to Clients page */}
+      <div className="card p-6">
+        <div className="text-sm opacity-80">KPIs have been moved to the Clients page for context-aware metrics.</div>
+      </div>
+>>>>>>> Stashed changes
+      <section className="card overflow-auto">
+        {loading && <div className="p-6 text-sm text-[var(--text-2)]">Loading clients…</div>}
+        {!loading && error && <div className="p-6 text-sm text-red-400">{error}</div>}
+        {!loading && !error && rows.length === 0 && <div className="p-6 text-sm opacity-70">No client data.</div>}
+        {!loading && !error && rows.length>0 && (
+          <table className="w-full text-sm">
+            <thead className="text-left text-[var(--text-2)] border-b border-[var(--border-subtle)]">
+              <tr>
+                <th className="py-2 px-3 font-medium">Client</th>
+                <th className="py-2 px-3 font-medium">Active</th>
+                <th className="py-2 px-3 font-medium">Engagements</th>
+                <th className="py-2 px-3 font-medium">Onboarding Tasks</th>
+                <th className="py-2 px-3 font-medium">Last Activity</th>
+                <th className="py-2 px-3 font-medium">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.client_id} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--surface-3)] transition-colors">
+                  <td className="py-2 px-3 font-medium">{r.client_name}</td>
+                  <td className="py-2 px-3">
+                    <span className={'inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium ' + (r.is_active ? 'bg-emerald-400/90 text-black' : 'bg-[var(--surface-4)] text-[var(--text-2)]')}>{r.is_active? 'Yes':'No'}</span>
+                  </td>
+                  <td className="py-2 px-3">{r.engagement_count ?? 0}</td>
+                  <td className="py-2 px-3">{r.pending_onboarding_tasks ?? 0}</td>
+                  <td className="py-2 px-3">{r.last_activity_utc ? formatUtc(r.last_activity_utc) : '—'}</td>
+                  <td className="py-2 px-3">{r.created_utc ? formatUtc(r.created_utc, { year: 'numeric', month: 'short', day: '2-digit' }) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </section>
     </div>
   );
 };
+
 export default DashboardRoute;
 
-function StatCard({ label, value, loading, error }: { label: string; value?: number; loading: boolean; error: boolean }) {
-  return (
-    <div className="panel neon px-5 py-4 text-left animate-slideUp">
-      <div className="label">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-brand-mint h-8 flex items-end">
-        {loading ? <div className="w-20 h-6 rounded bg-white/10 animate-pulse" /> :
-         error ? <span className="text-red-400">—</span> :
-         (value ?? 0)}
-      </div>
-    </div>
-  );
-}
-
-function SkeletonLine() {
-  return <div className="w-full h-6 rounded bg-brand-blue-700 animate-pulse" />;
-}
-function SkeletonList() {
-  return (
-    <div className="space-y-2">
-      <div className="w-full h-4 rounded bg-brand-blue-700 animate-pulse" />
-      <div className="w-5/6 h-4 rounded bg-brand-blue-700 animate-pulse" />
-      <div className="w-2/3 h-4 rounded bg-brand-blue-700 animate-pulse" />
-    </div>
-  );
-}
-function formatLocal(iso: string) {
-  if (!iso) return '';
-  try { return new Date(iso).toLocaleString(); } catch { return iso; }
-}
+const Stat: React.FC<{ title: string; value: string | number | undefined }> = ({ title, value }) => (
+  <div className="rounded-xl border border-[var(--border-subtle)] p-4 bg-[var(--surface-2)] flex flex-col gap-1">
+    <div className="text-[11px] uppercase tracking-wide text-[var(--text-2)]">{title}</div>
+    <div className="text-lg font-semibold">{value ?? '—'}</div>
+  </div>
+);

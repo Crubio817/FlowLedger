@@ -1,7 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../components/PageHeader.tsx';
 import { getFindings, putFindings } from '@services/api.ts';
-import type { Finding } from '@store/types.ts';
+import type { Finding as ApiFinding } from '../services/models.ts';
+// Extend API Finding with UI-managed collections (backend spec uses different field names)
+interface Finding extends ApiFinding {
+  findings_json: string[];
+  recommendations_json: string[];
+  priority_json: Record<string, 'Low'|'Medium'|'High'>;
+}
 import { Loading } from '../components/Loading.tsx';
 import { toast } from '../lib/toast.ts';
 import { useUnsavedGuard } from '../hooks/useUnsavedGuard.ts';
@@ -20,12 +26,11 @@ export default function FindingsRoute() {
   useEffect(() => {
     (async () => {
       try {
-        const d = await getFindings(auditId);
-        // ensure arrays exist
-        d.findings_json ||= [];
-        d.recommendations_json ||= [];
-        d.priority_json ||= {};
-        setDoc(d);
+  const d = await getFindings(auditId) as any as Finding; // cast until spec updated
+  d.findings_json ||= [];
+  d.recommendations_json ||= [];
+  d.priority_json ||= {};
+  setDoc(d as Finding);
       } catch (e: any) {
         setError(e.message || 'Failed to load findings');
       }
@@ -38,8 +43,8 @@ export default function FindingsRoute() {
     const t = setTimeout(async () => {
       try {
         setSaving(true);
-        const saved = await putFindings(auditId, doc);
-        setDoc(saved);
+  const saved = await putFindings(auditId, doc as any as ApiFinding) as any as Finding;
+  setDoc(saved as Finding);
         setDirty(false);
         savedToast(toast.success);
       } catch (e:any) {

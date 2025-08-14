@@ -14,12 +14,377 @@
 }
 
 :root {
+  /* Legacy accent tokens retained (may be remapped) */
   --blue-900: #0F172A;
   --blue-800: #111827;
-  --accent-mint: #34D399;
-  --accent-amber: #F59E0B;
-  --accent-cyan: #22D3EE;
+  /* Raiders-inspired neutrals */
+  --silver-100: #f5f6f7;
+  --silver-150: #eceeef;
+  --silver-200: #e2e4e6;
+  --silver-300: #cfd2d5;
+  --silver-400: #b9bcc0;
+  --silver-500: #a3a7ab;
+  --silver-600: #8c9094;
+  --silver-700: #717579;
+  --silver-800: #56595d;
+  --silver-900: #3d3f42;
+  --silver-950: #262729;
+  /* Map existing accent vars to neutral metallics */
+  --accent-mint: #c7cace; /* primary metallic accent */
+  --accent-amber: #8c9094; /* secondary neutral */
+  --accent-cyan: #d9dcdf; /* light highlight */
+  --accent-lime: #d1d3d6; /* used as active accent */
+  /* Raiders brand colors */
+  --raiders-black: #000000;
+<<<<<<< Updated upstream
+  --raiders-silver: #A5ACAF;
+=======
+  --raiders-silver: #7f8487; /* darker silver per request */
+  /* Black variants */
+  --black-matte: #060607; /* deep matte black */
+  --black-glass: rgba(10,10,10,0.56); /* translucent glass base */
+>>>>>>> Stashed changes
 }
+
+/* Dark app theme inspired dashboard */
+body.theme-dark {
+  --surface-0: #0b0c0d; /* page */
+  --surface-1: #111214; /* nav */
+  --surface-2: #181a1c; /* card */
+  --surface-3: #202225; /* hover */
+  --border-subtle: #2a2c2f;
+  --border-strong: #34363a;
+  --text-1: #f5f6f7;
+  --text-2: #9ba0a6;
+  --accent-active: var(--accent-lime);
+  background: var(--surface-0);
+  color: var(--text-1);
+  font-feature-settings: "ss01" on, "cv02" on;
+}
+body.theme-dark.accent-amber { --accent-active: var(--accent-amber); }
+body.theme-dark.accent-mint { --accent-active: var(--accent-mint); }
+body.theme-dark.accent-lime { --accent-active: var(--accent-lime); }
+
+body.theme-light {
+  --surface-0: var(--silver-100);
+  --surface-1: #ffffff;
+  --surface-2: #ffffff;
+  --surface-3: var(--silver-150);
+  --border-subtle: var(--silver-300);
+  --border-strong: var(--silver-400);
+  --text-1: #181a1c;
+  --text-2: #5d6166;
+  --accent-active: var(--silver-800);
+  background: var(--surface-0);
+  color: var(--text-1);
+}
+body.theme-light.accent-amber { --accent-active: var(--accent-amber); }
+body.theme-light.accent-mint { --accent-active: var(--accent-mint); }
+body.theme-light.accent-lime { --accent-active: var(--accent-lime); }
+
+/* Side navigation */
+.sidenav {
+  width: 240px;
+<<<<<<< Updated upstream
+  background: var(--raiders-silver);
+=======
+  /* default to deep matte black to make both sides black-on-black */
+  background: var(--black-matte);
+>>>>>>> Stashed changes
+  border-right: 1px solid rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0.75rem 1rem 0.75rem;
+  gap: 1.25rem;
+  color: #0b0b0b; /* high contrast text on silver */
+<<<<<<< Updated upstream
+}
+.sidenav.collapsed { width: 76px; }
+.sidenav.collapsed .logo-row span, .sidenav.collapsed a span.label-text, .sidenav.collapsed .footer-text { display:none; }
+.sidenav a svg { flex-shrink:0; opacity:.9; }
+.sidenav a { line-height:1; }
+.sidenav.collapsed a { justify-content:center; }
+.collapse-btn {
+  width:100%;
+  background: var(--surface-2);
+  border:1px solid var(--border-subtle);
+  color: var(--text-2);
+  font-size:12px;
+  padding:.45rem .5rem;
+  border-radius:8px;
+  display:flex; align-items:center; justify-content:center; gap:.4rem;
+  cursor:pointer; transition: background-color .18s, color .18s;
+}
+.collapse-btn:hover { background: rgba(0,0,0,0.06); color: #000; }
+.sidenav.collapsed .collapse-btn span { display:none; }
+.icon-btn { background: transparent; border: none; padding: 6px; display:inline-flex; align-items:center; justify-content:center; color: inherit; border-radius:6px; cursor:pointer; }
+.icon-btn:hover { background: rgba(0,0,0,0.06); }
+.sidenav .meta { margin-top:auto; padding:0 .5rem; }
+.sidenav .nav-section { padding: 0 0.5rem; display: flex; flex-direction: column; gap: 4px; }
+.sidenav a { display:flex; align-items:center; gap:.65rem; font-size:13px; font-weight:600; padding:.55rem .75rem; border-radius:8px; color: #0b0b0b; position:relative; transition: background-color .18s, color .18s; }
+.sidenav a:hover { background: rgba(0,0,0,0.06); color: #000; }
+.sidenav a.active { background: rgba(0,0,0,0.12); color: #fff; }
+.sidenav a.active::after {
+  content: ""; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 3px; border-radius: 2px; background: var(--accent-active);
+}
+
+/* subtle inset line and vertical divider */
+.sidenav { box-shadow: 1px 0 0 0 rgba(0,0,0,0.06) inset; }
+.sidenav::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0,0,0,0.12);
+}
+.sidenav .logo-row { padding: 0 0.5rem; display:flex; align-items:center; gap:.5rem; }
+.sidenav .footer { margin-top: auto; font-size: 11px; color: var(--text-2); opacity:.7; padding:0 0.5rem; }
+
+/* Cards */
+.card, body.theme-dark .panel, body.theme-dark .paper-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 4px 8px -4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.02);
+  position: relative;
+}
+.card.hoverable:hover { background: var(--surface-3); }
+.metric-large { font-size: 42px; font-weight: 600; letter-spacing: -1px; }
+.muted { color: var(--text-2); }
+.accent-pill { background: var(--accent-active); color: #000; font-weight:600; font-size:11px; padding:4px 8px; border-radius: 999px; letter-spacing: .5px; }
+
+/* Accent interactive */
+button.accent, .accent-btn {
+  background: linear-gradient(135deg, var(--accent-active), var(--silver-500));
+  color: #111;
+  font-weight: 600;
+  font-size: 13px;
+  padding: .55rem .9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05) inset;
+}
+button.accent:hover, .accent-btn:hover { filter: brightness(1.08); }
+=======
+  position: relative; /* anchor floating controls and pseudo elements */
+  min-height: 100vh; height: 100vh;
+}
+.sidenav.collapsed { width: 56px; }
+.sidenav.collapsed .logo-row span:last-child, .sidenav.collapsed a span.label-text, .sidenav.collapsed .footer-text { display:none; }
+.sidenav a svg { flex-shrink:0; opacity:.98; width:18px; height:18px; }
+.sidenav a { line-height:1.1; }
+.sidenav.collapsed a { justify-content:center; padding: .45rem 0; }
+.collapse-btn {
+  width: 36px;
+  height: 36px;
+  padding: 4px;
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:6px; /* small rounded rect */
+  background: transparent; border: none; box-shadow: none;
+  color: rgba(0,0,0,0.6); cursor: pointer;
+}
+.collapse-btn:hover { background: rgba(0,0,0,0.04); }
+.sidenav.collapsed .collapse-btn { width: 36px; height: 36px; }
+.sidenav.collapsed .collapse-btn span { display: inline-flex; }
+
+/* collapsed: center logo and hide headings/footer text */
+.sidenav.collapsed .logo-row { justify-content:center; padding-left: 0; }
+.sidenav.collapsed .nav-heading { display: none; }
+.sidenav.collapsed .footer-bar .meta { display: none; }
+
+/* slim rail: compact icon-only collapsed state */
+.sidenav.collapsed a svg { width:22px; height:22px; padding:6px; border-radius:10px; background: transparent; display:inline-grid; place-items:center; transition: background .12s, transform .12s; }
+.sidenav.collapsed a:hover svg { background: rgba(255,255,255,0.03); transform: translateX(2px); }
+body.theme-dark .sidenav.collapsed a:hover svg { background: rgba(255,255,255,0.04); }
+
+/* reduce spacing in collapsed mode */
+.sidenav.collapsed .nav-section { gap: 6px; padding: .5rem 0; }
+
+/* visually pull button out of nav so it floats on the edge */
+.sidenav .nav-section > .collapse-btn { margin-right: 0; margin-left: 0; }
+.icon-btn { background: transparent; border: none; padding: 6px; display:inline-flex; align-items:center; justify-content:center; color: inherit; border-radius:6px; cursor:pointer; }
+.icon-btn:hover { background: rgba(0,0,0,0.06); }
+.sidenav .meta { margin-top:auto; padding:0 .5rem; }
+.sidenav .nav-section { padding: 0 0.5rem; display: flex; flex-direction: column; gap: 8px; }
+.sidenav .nav-heading { font-size: 11px; text-transform: uppercase; color: rgba(0,0,0,0.6); padding: .25rem .75rem; letter-spacing: .6px; }
+.sidenav .nav-section + .nav-section { border-top: 1px solid rgba(0,0,0,0.06); padding-top: .6rem; }
+.sidenav a { display:flex; align-items:center; gap:.75rem; font-size:13px; font-weight:600; padding:.6rem .75rem; border-radius:8px; color: #0b0b0b; position:relative; transition: background-color .18s, color .18s; }
+/* theme-specific corrections: ensure sidenav is readable in dark mode */
+/* Keep sidenav text black for strong readability like the provided screenshot */
+.sidenav { color: #f5f6f7; }
+.sidenav a { color: #f5f6f7; }
+.sidenav a:hover { background: rgba(255,255,255,0.02); color: #fff; }
+.sidenav a.active { background: rgba(255,255,255,0.03); color: #fff; box-shadow: inset 3px 0 0 0 var(--accent-active); }
+/* keep existing light theme behavior but make explicit */
+/* Ensure light-theme class still renders the same (we removed light mode control) */
+body.theme-light .sidenav { background: var(--raiders-silver); color: #0b0b0b; }
+body.theme-light .sidenav a { color: #0b0b0b; }
+body.theme-light .sidenav a:hover { background: rgba(0,0,0,0.06); color: #000; }
+body.theme-light .sidenav a.active { background: rgba(0,0,0,0.16); color: #fff; box-shadow: inset 3px 0 0 0 var(--accent-active); }
+
+/* Accent interactive */
+button.accent, .accent-btn {
+  background: var(--accent-active);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: .55rem .85rem;
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.03) inset;
+  transition: transform .08s ease, box-shadow .12s ease, filter .08s ease;
+}
+.accent-btn:hover { transform: translateY(-1px); filter: brightness(0.98); }
+.accent-btn:active { transform: translateY(0); }
+.accent-btn:disabled { opacity: .56; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* theme-aware foreground for good contrast */
+body.theme-dark .accent-btn { color: #000; }
+body.theme-light .accent-btn { color: #fff; }
+
+/* focus ring */
+.accent-btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent-active) 60%, black 40%); outline-offset: 3px; }
+>>>>>>> Stashed changes
+
+/* Scroll area tweak */
+.app-shell { display:flex; min-height:100vh; background: var(--surface-0); }
+.workspace { flex:1; display:flex; flex-direction:column; }
+<<<<<<< Updated upstream
+=======
+
+/* Ensure workspace can host an overlay */
+.workspace { position: relative; }
+
+/* Dark-mode elevation: give the left nav a subtle shadow to the right so it reads as elevated,
+   and add a faint left-edge highlight on the workspace to emphasize separation. */
+body.theme-dark .sidenav {
+  box-shadow: 8px 0 24px rgba(0,0,0,0.6); /* elevated card shadow to the right */
+  z-index: 60; /* bring nav above workspace overlays */
+  position: relative;
+}
+body.theme-dark .workspace::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent);
+  z-index: 5; /* keep below the sidenav divider */
+}
+
+/* Slightly reduce the inset divider so the shadow reads more naturally */
+body.theme-dark .sidenav::after { background: rgba(255,255,255,0.02); }
+
+/* Divider line between sidenav and workspace - matte vs glass vibes */
+.sidenav::after {
+  /* divider + noticeable glow */
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 3px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  box-shadow: 0 0 30px rgba(255,255,255,0.06);
+  filter: blur(1.2px);
+  transition: width .18s ease, box-shadow .18s ease, background .18s ease, transform .18s ease;
+  z-index: 70; /* ensure divider sits above workspace */
+}
+
+/* stronger luminous glow when the nav is expanded (gently bleeds into workspace) */
+.sidenav:not(.collapsed)::after {
+  width: 8px;
+  background: linear-gradient(90deg, rgba(180,185,188,0.14), rgba(180,185,188,0.04));
+  box-shadow: 0 0 60px rgba(180,185,188,0.12);
+  filter: blur(3px);
+  animation: rail-pulse 3.6s ease-in-out infinite;
+}
+
+/* thin glow when collapsed (rail) */
+.sidenav.collapsed::after {
+  width: 4px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04), transparent 60%);
+  box-shadow: 0 0 18px rgba(255,255,255,0.04);
+  filter: blur(1.6px);
+}
+
+@keyframes rail-pulse {
+  0% { box-shadow: 0 0 40px rgba(180,185,188,0.08); transform: translateX(0); }
+  50% { box-shadow: 0 0 72px rgba(180,185,188,0.14); transform: translateX(0.5px); }
+  100% { box-shadow: 0 0 40px rgba(180,185,188,0.08); transform: translateX(0); }
+}
+
+/* Glass vibe: translucent sidebar with blur and a soft luminous divider */
+body.vibe-glass .sidenav {
+  background: var(--black-glass);
+  backdrop-filter: blur(6px) saturate(1.05);
+  border-right: 1px solid rgba(255,255,255,0.04);
+}
+body.vibe-glass .workspace { background: #050505; }
+body.vibe-glass .sidenav::after { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); width: 2px; box-shadow: 0 0 18px rgba(255,255,255,0.02); }
+
+/* Matte vibe: deep flat blacks and a subtle etched divider */
+body.vibe-matte .sidenav { background: var(--black-matte); }
+body.vibe-matte .workspace { background: #070707; }
+body.vibe-matte .sidenav::after { background: rgba(255,255,255,0.015); width: 1px; box-shadow: none; }
+
+/* No workspace gradient: keep flat background for clarity per request */
+
+>>>>>>> Stashed changes
+.workspace-main { flex:1; padding: 1.75rem 2rem 3rem; max-width: 1600px; width:100%; margin:0 auto; }
+
+/* Paper theme (Option B replaces existing look) */
+body.paper-theme {
+  --paper-bg: #f8f7f4;
+  --paper-ink: #2e2b26;
+  --paper-edge: #e7e3dc;
+  color: var(--paper-ink);
+  background:
+    radial-gradient(circle at 30% 20%, #ffffff 0%, #f8f7f4 60%, #f0eee9 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='0.08'/></svg>");
+  background-blend-mode: multiply;
+}
+
+/* Paper cards */
+.paper-card, body.paper-theme .panel {
+  background: linear-gradient(#fffefd, #f9f8f5);
+  border: 1px solid var(--paper-edge);
+  border-radius: 6px;
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.06),
+    0 2px 4px rgba(0,0,0,0.05),
+    0 6px 14px -6px rgba(0,0,0,0.12);
+  position: relative;
+  backdrop-filter: none;
+}
+.paper-card::after, body.paper-theme .panel::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), transparent 60%);
+  mix-blend-mode: overlay;
+}
+
+/* Remove neon glow when paper theme active */
+body.paper-theme .panel.neon { box-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 4px 10px -4px rgba(0,0,0,0.12); }
+body.paper-theme .btn-glow { box-shadow: none; background: linear-gradient(#fffefd,#f4f3ef); color: var(--paper-ink); border-color: #ddd7cf; }
+
+/* Lined / dotted / grid surfaces */
+.paper-lined { background: repeating-linear-gradient(to bottom,#d9d5ce 0 1px,transparent 1px 28px), linear-gradient(#fffefd,#faf9f6); }
+.paper-dotted { background: radial-gradient(#c8c2b8 1px,transparent 1px) 0 0 / 18px 18px, linear-gradient(#fffefd,#faf9f6); }
+.paper-grid { background: linear-gradient(#dcd6cf 0 1px,transparent 1px) 0 0/100% 26px, linear-gradient(90deg,#dcd6cf 0 1px,transparent 1px) 0 0/26px 100%, linear-gradient(#fffefd,#faf9f6); }
+
+/* Headings ink style */
+body.paper-theme h1,body.paper-theme h2,body.paper-theme h3 { font-weight:600; letter-spacing:0.5px; color: var(--paper-ink); }
+
+/* Override labels & subtle text color */
+body.paper-theme .label { color: #5a564f; }
 
 body.accent-amber {
   --accent-mint: var(--accent-amber);
@@ -46,6 +411,16 @@ body.accent-amber {
 .bg-noise {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23n)" opacity="0.06"/></svg>');
   background-size: 300px 300px;
+}
+
+/* Photographic background options */
+.bg-hero-1,
+.bg-hero-2 {
+  /* Images removed: simple gradient fallback */
+  background: linear-gradient(180deg, #0B1220 0%, #0F172A 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Neon panel with glass effect */
@@ -96,5 +471,106 @@ body.accent-amber {
   content: attr(data-value) '%';
   position: absolute; inset: 0;
   display: grid; place-items: center;
-  color: white; font-weight: 700; font-size: 24px;
+  color: var(--text-1); font-weight: 700; font-size: 24px;
 }
+
+/* Collapse button: plain arrow (no circle) */
+.collapse-btn { background: transparent; border: none; padding: 6px; display:inline-flex; align-items:center; justify-content:center; cursor: pointer; }
+.collapse-btn .chev { display:inline-flex; align-items:center; justify-content:center; color: rgba(0,0,0,0.6); }
+.collapse-btn .chev svg, .collapse-btn .chev svg * { stroke: currentColor; }
+.collapse-btn .chev.rotated { transform: rotate(180deg); transition: transform .18s ease; }
+.collapse-btn .chev { transition: transform .18s ease; }
+
+/* Dark theme: ensure the chevron is visible */
+body.theme-dark .collapse-btn .chev { color: rgba(255,255,255,0.9); }
+
+/* Footer placement */
+.sidenav .footer-bar { position: absolute; bottom: 0; left: 0; right: 0; padding: .75rem; display:flex; align-items:center; justify-content:space-between; }
+.sidenav .footer-bar .meta { color: rgba(0,0,0,0.6); }
+body.theme-dark .sidenav .footer-bar .meta { color: rgba(255,255,255,0.7); }
+
+/* small tweak: give collapsed icon squares a slightly stronger contrast in dark mode */
+.sidenav.collapsed a svg { width:28px; height:28px; padding:4px; border-radius:6px; background: rgba(255,255,255,0.02); display:inline-grid; place-items:center; }
+body.theme-dark .sidenav.collapsed a svg { background: rgba(255,255,255,0.03); }
+
+/* Make the left nav occupy full height so the absolute-positioned footer sits at the bottom */
+.sidenav { min-height: 100vh; height: 100vh; }
+
+/* Hover-expand behavior: expand the slim rail when hovered with mouse */
+.sidenav.collapsed:hover { width: 240px; transition: width .18s ease; }
+.sidenav.collapsed:hover .label-text { display: inline; }
+.sidenav.collapsed .label-text { display: none; }
+
+/* Strong override: collapse button should be a plain arrow with no background, no border, no shadow */
+.sidenav .collapse-btn { background: transparent !important; border: none !important; box-shadow: none !important; padding: 6px !important; border-radius: 0 !important; }
+.sidenav .collapse-btn .chev { color: rgba(0,0,0,0.6); display:inline-flex; }
+body.theme-dark .sidenav .collapse-btn .chev { color: rgba(255,255,255,0.95); }
+.sidenav .collapse-btn .chev svg, .sidenav .collapse-btn .chev svg * { background: transparent !important; box-shadow: none !important; border-radius: 0 !important; }
+/* Extra strong rule to prevent any upstream svg/button styles from adding a visible box */
+.sidenav .collapse-btn, .sidenav .collapse-btn * { background: transparent !important; border: none !important; box-shadow: none !important; }
+
+/* Ensure footer meta and toggle are visible and anchored */
+.sidenav .footer-bar { position: absolute; bottom: 12px; left: 0; right: 0; padding: .75rem; display:flex; align-items:center; justify-content:space-between; }
+.sidenav .footer-bar .meta { color: rgba(0,0,0,0.6); }
+body.theme-dark .sidenav .footer-bar .meta { color: rgba(255,255,255,0.7); }
+
+/* Ensure collapsed state still rotates the chevron via the chev.rotated class */
+.collapse-btn .chev.rotated { transform: rotate(180deg); }
+
+/* Modal overlay and card theme-aware styles */
+.modal-overlay { background: color-mix(in srgb, black 40%, transparent); }
+.modal-card { background: var(--surface-2); border: 1px solid var(--border-subtle); color: var(--text-1); box-shadow: 0 12px 40px rgba(0,0,0,0.45); }
+.modal-card input { border: 1px solid var(--border-subtle); }
+
+/* Modal visual tuning: radius, shadow, buttons, inputs */
+.modal-overlay { backdrop-filter: blur(2px); }
+
+.modal-card {
+  border-radius: 12px; /* slightly smaller than 2xl for a modern card */
+  padding: 1.25rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-1);
+  box-shadow: 0 10px 30px rgba(2,6,23,0.45); /* softer, darker shadow for depth */
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+
+/* Input styling inside modal */
+.modal-card input[type="text"], .modal-card input, .modal-card textarea {
+  width: 100%;
+  padding: .5rem .6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+  color: var(--text-1);
+}
+.modal-card input:focus-visible, .modal-card textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent-active) 40%, transparent 60%);
+  outline-offset: 2px;
+}
+
+/* Action buttons in modal */
+.modal-card .accent-btn {
+  padding: .5rem .85rem;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+/* ensure high contrast for the primary CTA depending on theme */
+body.theme-dark .modal-card .accent-btn { color: #000; }
+body.theme-light .modal-card .accent-btn { color: #fff; }
+
+/* Cancel button styling */
+.modal-card .cancel-btn, .modal-card button[aria-label="cancel"] { /* fallback selectors */
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-1);
+  padding: .45rem .75rem;
+  border-radius: 8px;
+}
+
+/* Small polish: elevate card slightly on show */
+.modal-card.show { transform: translateY(-6px); opacity: 1; }
+
+/* Ensure modal close icon is visible and interactive */
+.modal-card .icon-btn { color: var(--text-1); }
+.modal-card .icon-btn:hover { background: rgba(0,0,0,0.04); }

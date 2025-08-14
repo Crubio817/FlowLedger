@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { listInterviews, createInterview, updateInterview, deleteInterview } from '@services/api.ts';
-import type { Interview } from '@store/types.ts';
+import type { Interview as ApiInterview } from '../services/models.ts';
+// Adapt Interview to include UI enums (backend currently leaves mode/status unconstrained strings)
+type Interview = ApiInterview & { status?: string; mode?: string };
 import { toast } from '../lib/toast.ts';
 
 export default function InterviewsRoute() {
@@ -121,7 +123,7 @@ function CreateModal({ onClose, onCreated }:{ onClose:()=>void; onCreated:()=>vo
     if (!['Planned','Completed','Canceled'].includes(form.status as any)) { setErr('Invalid status'); return; }
     try {
       setSaving(true);
-      await createInterview(form);
+  await createInterview(form as any);
       onCreated();
     } catch(e:any) {
       setErr(e.message || 'Create failed');

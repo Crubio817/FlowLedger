@@ -37,7 +37,7 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: "dist"
+          app_artifact_location: "dist"
         env:
           VITE_API_BASE_URL: https://flowledger-api-func.azurewebsites.net/api
 

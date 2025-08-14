@@ -1,11 +1,14 @@
 import { create, StateCreator } from 'zustand';
-import { DashboardStats, ActivityItem, SipocDoc, Interview, InterviewResponse, ProcessMap, Question } from './types.ts';
+import { DashboardStats, ActivityItem, Interview, InterviewResponse, ProcessMap, Question } from './types.ts';
+import type { SipocDoc as ApiSipocDoc } from '../services/models.ts';
+type SipocDoc = ApiSipocDoc & { audit_id?: number };
 import * as api from '../services/api.ts';
 
 interface AppState {
   loading: boolean;
   error?: string;
   accent: 'mint' | 'amber';
+  theme: 'dark' | 'light';
   dashboard?: DashboardStats;
   activity: ActivityItem[];
   sipocVersion: 'current' | 'future';
@@ -17,6 +20,7 @@ interface AppState {
   toasts: { id: number; message: string }[];
   init: () => Promise<void>;
   toggleAccent: () => void;
+  toggleTheme: () => void;
   setSipocVersion: (v: 'current' | 'future') => void;
   loadSipoc: (auditId: number) => Promise<void>;
   saveSipoc: (auditId: number, doc: SipocDoc) => Promise<void>;
@@ -27,6 +31,7 @@ interface AppState {
 const creator: StateCreator<AppState> = (set, get) => ({
   loading: false,
   accent: 'mint',
+  theme: 'dark',
   activity: [],
   interviews: [],
   interviewResponses: {},
@@ -47,6 +52,7 @@ const creator: StateCreator<AppState> = (set, get) => ({
     }
   },
   toggleAccent: () => set(s => ({ accent: s.accent === 'mint' ? 'amber' : 'mint' })),
+  toggleTheme: () => set(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
   setSipocVersion: (v: 'current' | 'future') => set({ sipocVersion: v }),
   loadSipoc: async (auditId: number) => {
     const doc = await api.getSipoc(auditId);
