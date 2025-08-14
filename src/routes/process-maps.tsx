@@ -9,9 +9,8 @@ export default function ProcessMapsRoute() {
   const auditId = Number(params.get('auditId') ?? 1);
 
   const [rows, setRows] = useState<ProcessMap[]>([]);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
-  const [total, setTotal] = useState<number|undefined>();
+  const page = 1;
+  const limit = 20;
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string|null>(null);
   const [preview, setPreview] = useState<ProcessMap|null>(null);
@@ -20,14 +19,13 @@ export default function ProcessMapsRoute() {
   async function load() {
     setLoading(true); setErr(null);
     try {
-      const { data, meta } = await listProcessMaps(page, limit, auditId);
+      const { data } = await listProcessMaps(page, limit, auditId);
       setRows(data || []);
-      setTotal(meta?.total);
     } catch(e:any) {
       setErr(e.message || 'Failed to load process maps');
     } finally { setLoading(false); }
   }
-  useEffect(()=>{ load(); }, [page, limit, auditId]);
+  useEffect(()=>{ load(); }, [auditId]);
 
   async function onUploadFile(file: File, title?: string) {
     try {

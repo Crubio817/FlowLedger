@@ -9,6 +9,7 @@ Built with React, TypeScript, and Vite, it features a clean, component-based arc
 ## Features
 
 - **Dashboard:** At-a-glance view of in-progress audits and recent activity.
+- **Side Navigation:** Persistent vertical menu for quick access to app sections.
 - **SIPOC Builder:** Interactive tool to define Suppliers, Inputs, Process, Outputs, and Customers.
 - **Interview Management:** Schedule interviews and log question-and-answer sessions.
 - **Process Mapping:** Upload and manage process flow diagrams.
