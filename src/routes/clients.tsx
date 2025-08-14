@@ -5,7 +5,8 @@ import { formatUtc } from '../utils/date.ts';
 
 const badgeBase = 'inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium';
 
-export const ClientsOverviewPage: React.FC = () => {
+// Route showing a table of client engagement and onboarding stats
+export const ClientsRoute: React.FC = () => {
   const [rows, setRows] = useState<ClientsOverviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,4 +93,4 @@ export const ClientsOverviewPage: React.FC = () => {
   );
 };
 
-export default ClientsOverviewPage;
+export default ClientsRoute;
