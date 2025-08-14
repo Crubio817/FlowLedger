@@ -17,11 +17,11 @@ describe('SideNav navigation', () => {
       </MemoryRouter>
     );
 
-    // link is present
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+  // link is present (collapsed sidebar: check by title)
+  expect(screen.getByTitle('Dashboard')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('SIPOC'));
-    expect(await screen.findByText('SIPOC Content')).toBeInTheDocument();
+  fireEvent.click(screen.getByTitle('SIPOC'));
+  expect(await screen.findByText('SIPOC Content')).toBeInTheDocument();
   });
 });
 

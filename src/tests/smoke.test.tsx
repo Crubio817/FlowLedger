@@ -9,6 +9,6 @@ import { AppLayout } from '../app.tsx';
 describe('AppLayout', () => {
   it('renders nav links', () => {
     render(<MemoryRouter><AppLayout /></MemoryRouter>);
-  expect(!!screen.getByText(/Dashboard/i)).toBe(true);
+  expect(screen.getByTitle('Dashboard')).toBeInTheDocument();
   });
 });
