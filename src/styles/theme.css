@@ -175,20 +175,22 @@ body.theme-light .accent-btn { color: #fff; }
 /* Dark-mode elevation: give the left nav a subtle shadow to the right so it reads as elevated,
    and add a faint left-edge highlight on the workspace to emphasize separation. */
 body.theme-dark .sidenav {
-  box-shadow: 8px 0 24px rgba(0,0,0,0.6); /* elevated card shadow to the right */
-  z-index: 60; /* bring nav above workspace overlays */
+  /* no glow/shadow: keep flat matte look */
+  box-shadow: none;
+  z-index: 60; /* keep above workspace overlays if needed */
   position: relative;
 }
 body.theme-dark .workspace::before {
+  /* remove workspace highlight strip (flat background) */
   content: "";
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
-  width: 18px;
+  width: 0; /* disabled */
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent);
-  z-index: 5; /* keep below the sidenav divider */
+  background: transparent;
+  z-index: 1;
 }
 
 /* Slightly reduce the inset divider so the shadow reads more naturally */
@@ -196,41 +198,20 @@ body.theme-dark .sidenav::after { background: rgba(255,255,255,0.02); }
 
 /* Divider line between sidenav and workspace - matte vs glass vibes */
 .sidenav::after {
-  /* divider + noticeable glow */
+  /* flat divider: 1px solid line, no glow */
   content: "";
   position: absolute;
   top: 0; right: 0; bottom: 0;
-  width: 3px;
+  width: 1px;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  box-shadow: 0 0 30px rgba(255,255,255,0.06);
-  filter: blur(1.2px);
-  transition: width .18s ease, box-shadow .18s ease, background .18s ease, transform .18s ease;
-  z-index: 70; /* ensure divider sits above workspace */
+  background: rgba(255,255,255,0.02);
+  box-shadow: none;
+  filter: none;
+  transition: none;
+  z-index: 70;
 }
 
-/* stronger luminous glow when the nav is expanded (gently bleeds into workspace) */
-.sidenav:not(.collapsed)::after {
-  width: 8px;
-  background: linear-gradient(90deg, rgba(180,185,188,0.14), rgba(180,185,188,0.04));
-  box-shadow: 0 0 60px rgba(180,185,188,0.12);
-  filter: blur(3px);
-  animation: rail-pulse 3.6s ease-in-out infinite;
-}
-
-/* thin glow when collapsed (rail) */
-.sidenav.collapsed::after {
-  width: 4px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.04), transparent 60%);
-  box-shadow: 0 0 18px rgba(255,255,255,0.04);
-  filter: blur(1.6px);
-}
-
-@keyframes rail-pulse {
-  0% { box-shadow: 0 0 40px rgba(180,185,188,0.08); transform: translateX(0); }
-  50% { box-shadow: 0 0 72px rgba(180,185,188,0.14); transform: translateX(0.5px); }
-  100% { box-shadow: 0 0 40px rgba(180,185,188,0.08); transform: translateX(0); }
-}
+/* rail-pulse animation removed to disable sidebar glow */
 
 /* Glass vibe: translucent sidebar with blur and a soft luminous divider */
 body.vibe-glass .sidenav {
