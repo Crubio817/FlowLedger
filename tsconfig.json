@@ -9,7 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-  "module": "NodeNext",
+    "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "baseUrl": "./src",
@@ -23,8 +23,9 @@
     },
     "isolatedModules": true,
     "noEmit": true,
-  "jsx": "react-jsx",
-  "allowImportingTsExtensions": true
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["src"],
   "references": []

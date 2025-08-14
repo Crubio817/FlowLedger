@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { PageHeader } from '../components/PageHeader.tsx';
+import React, { useEffect, useState } from 'react';
 import { getFindings, putFindings } from '@services/api.ts';
 import type { Finding as ApiFinding } from '../services/models.ts';
 // Extend API Finding with UI-managed collections (backend spec uses different field names)
@@ -8,7 +7,6 @@ interface Finding extends ApiFinding {
   recommendations_json: string[];
   priority_json: Record<string, 'Low'|'Medium'|'High'>;
 }
-import { Loading } from '../components/Loading.tsx';
 import { toast } from '../lib/toast.ts';
 import { useUnsavedGuard } from '../hooks/useUnsavedGuard.ts';
 import { savedToast } from '../lib/saveNotifier.ts';
@@ -66,6 +64,7 @@ export default function FindingsRoute() {
       // migrate priority key if changed
       if (old && old !== value && prev.priority_json && prev.priority_json[old]) {
         const p = prev.priority_json[old];
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [old]: _omit, ...rest } = prev.priority_json;
   next.priority_json = value.trim() ? { ...rest, [value]: p } : { ...rest };
       }
@@ -85,6 +84,7 @@ export default function FindingsRoute() {
       const arr = prev.findings_json.filter((_, idx) => idx !== i);
       const next: Finding = { ...prev, findings_json: arr };
       if (key && next.priority_json && key in next.priority_json) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [key]: _drop, ...rest } = next.priority_json;
         next.priority_json = rest;
       }
