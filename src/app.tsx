@@ -29,11 +29,7 @@ export const AppLayout: React.FC = () => {
           {!loading && error && <div className="text-sm text-red-400" data-testid="error-state">{error}</div>}
           {!loading && !error && <Outlet />}
         </main>
-<<<<<<< Updated upstream
         <footer className="px-6 py-6 text-xs text-[var(--text-2)]">© {new Date(currentIsoUtc()).getFullYear()} FlowLedger</footer>
-=======
-  <footer className="px-6 py-6 text-xs text-[var(--text-2)]">&nbsp;</footer>
->>>>>>> Stashed changes
       </div>
     </div>
   );
