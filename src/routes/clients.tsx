@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { getClientsOverview } from '../services/api.ts';
 import type { ClientsOverviewItem } from '../services/models.ts';
@@ -89,6 +90,7 @@ export const ClientsRoute: React.FC = () => {
           </table>
         )}
       </div>
+
     </div>
   );
 };
