@@ -137,8 +137,52 @@ export async function listClients(page = 1, limit = 20, sort = 'name', order: 'a
 }
 
 // Create client (spec snapshot currently lacks POST /clients; backend supports it)
-export async function createClient(name: string, is_active = true): Promise<{ status?: string; data?: { client_id?: number } }> {
-  return withErrors(() => http.post('/clients', { name, is_active }), 'Create client failed');
+export async function createClient(name: string, is_active = true, primaryContactId: number | null = null): Promise<any> {
+  // Use stored procedure endpoint - include PrimaryContactId (backend expects the field present)
+  const payload: Record<string, any> = {
+    Name: name,
+    IsActive: is_active,
+    // include multiple key variants to accommodate different API validators/binders
+    PrimaryContactId: primaryContactId,
+    primaryContactId: primaryContactId,
+    primary_contact_id: primaryContactId,
+    // helpful defaults which backend may accept
+  PlaybookCode: 'DEFAULT',
+  playbookCode: 'DEFAULT',
+  playbook_code: 'DEFAULT',
+  OwnerUserId: null,
+  };
+
+  // Defensive: some backend deployments expect slightly different payload shapes or
+  // may not accept null for PrimaryContactId. Try the straightforward call first,
+  // and if the server responds with the specific missing-field error, retry with
+  // alternate shapes so we can be robust across envs without server changes.
+  try {
+    // debug: log payload so we can confirm PrimaryContactId is present in requests
+    // (remove or guard this in prod if sensitive)
+    // eslint-disable-next-line no-console
+    console.debug('[api] createClient payload:', JSON.stringify(payload));
+    return await http.post('/clients/create-proc', payload);
+  } catch (e: any) {
+    // eslint-disable-next-line no-console
+    console.debug('[api] createClient error:', e && (e.message || JSON.stringify(e)));
+    // If backend explicitly complains about PrimaryContactId missing, try alternate shapes
+    const msg = (e && (e.message || (e.message === '' && JSON.stringify(e)))) || '';
+    const lower = String(msg).toLowerCase();
+    if (lower.includes('missing required field') && lower.includes('primarycontactid')) {
+      // Try sending payload wrapped under common envelope keys
+      const alternates = [ { data: payload }, { client: payload }, { payload } ];
+      for (const alt of alternates) {
+        try {
+          return await http.post('/clients/create-proc', alt);
+        } catch (innerErr) {
+          // continue to next alternate
+        }
+      }
+    }
+    // rethrow original error if all retries fail
+    throw e;
+  }
 }
 
 export async function listAudits(page = 1, limit = 20, sort = 'created_utc', order: 'asc' | 'desc' = 'desc'):
@@ -147,7 +191,55 @@ export async function listAudits(page = 1, limit = 20, sort = 'created_utc', ord
   return withErrors(() => http.get(`/audits?${q}`), 'Failed to load audits');
 }
 
-export async function getClientsOverview(limit = 50): Promise<ApiEnvelope<ClientsOverviewItem[]>> {
+// Create a single engagement
+export async function createEngagement(payload: { client_id: number; name: string; status?: string; start_utc?: string | null; end_utc?: string | null; notes?: string | null }): Promise<any> {
+  return withErrors(() => http.post('/client-engagements', payload), 'Create engagement failed');
+}
+
+export async function getClientsOverview(limit = 50, query?: string): Promise<ApiEnvelope<ClientsOverviewItem[]>> {
   const q = new URLSearchParams({ limit: String(limit) });
-  return withErrors(() => http.get<ApiEnvelope<ClientsOverviewItem[]>>(`/clients-overview?${q}`), 'Failed to load clients overview');
+  if (query) q.set('q', String(query));
+  return withErrors(() => http.get<ApiEnvelope<ClientsOverviewItem[]>>(`/clients-overview?${q.toString()}`), 'Failed to load clients overview');
+}
+
+// Client contacts types & CRUD
+export type ClientContact = {
+  contact_id?: number;
+  client_id?: number;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  title?: string | null;
+  is_primary?: boolean;
+  is_active?: boolean;
+  created_utc?: string | null;
+  updated_utc?: string | null;
+};
+
+export async function listClientContacts(page = 1, limit = 25, clientId?: number): Promise<{ data: ClientContact[]; meta?: PageMeta }> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (clientId) q.set('client_id', String(clientId));
+  return withErrors(() => http.get(`/client-contacts?${q.toString()}`), 'Failed to load client contacts');
+}
+
+export async function getClientContact(id: number): Promise<ClientContact> {
+  return withErrors(() => http.get(`/client-contacts/${id}`), 'Failed to load contact');
+}
+
+export async function createClientContact(payload: Partial<ClientContact>): Promise<ClientContact> {
+  return withErrors(() => http.post('/client-contacts', payload), 'Create contact failed');
+}
+
+export async function updateClientContact(id: number, payload: Partial<ClientContact>): Promise<ClientContact> {
+  return withErrors(() => http.put(`/client-contacts/${id}`, payload), 'Update contact failed');
+}
+
+export async function deleteClientContact(id: number): Promise<{ deleted?: number }> {
+  return withErrors(() => http.del(`/client-contacts/${id}`), 'Delete contact failed');
+}
+
+// Post-creation client setup (idempotent orchestration on backend)
+export async function clientSetup(clientId: number, payload: { PrimaryContactId?: number | null; PlaybookCode?: string; OwnerUserId?: number | null }): Promise<any> {
+  return withErrors(() => http.post(`/clients/${clientId}/setup`, payload), 'Client setup failed');
 }

@@ -248,12 +248,12 @@ body.vibe-matte .sidenav::after { background: rgba(255,255,255,0.015); width: 1p
   padding: 1px; /* inner stroke */
 }
 .panel.neon {
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 24px rgba(52, 211, 153, 0.25);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 24px rgba(127,132,135,0.25);
 }
 
 .btn-glow {
   @apply rounded-full px-4 py-2 text-sm font-semibold border border-white/15 bg-white/5 hover:bg-white/10 transition-colors;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 16px rgba(52,211,153,0.35);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 16px rgba(127,132,135,0.35);
 }
 
 .divider-thin { @apply border-t border-white/10; }
@@ -270,7 +270,7 @@ body.vibe-matte .sidenav::after { background: rgba(255,255,255,0.015); width: 1p
     radial-gradient(farthest-side, transparent 64%, #000 65%);
           mask:
     radial-gradient(farthest-side, transparent 64%, #000 65%);
-  box-shadow: 0 0 24px rgba(52,211,153,0.35);
+  box-shadow: 0 0 24px rgba(127,132,135,0.35);
 }
 .gauge::after{
   content: attr(data-value) '%';
@@ -288,17 +288,45 @@ body.accent-amber {
   outline-offset: 2px;
 }
 
+/* Modal footer and CTA styles */
+.modal-footer {
+  position: sticky;
+  bottom: 0;
+  background: transparent;
+  padding: 12px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.btn-cancel {
+  padding: .45rem .75rem;
+  border-radius: .375rem;
+  background: rgba(255,255,255,0.03);
+  color: var(--text-2);
+  font-size: 0.9rem;
+  transition: background .12s, color .12s;
+}
+.btn-cancel:hover { background: rgba(255,255,255,0.05); color: var(--text-1); }
+.btn-create {
+  padding: .5rem 1rem;
+  border-radius: .375rem;
+  background: var(--silver-700);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+  transition: background .12s, transform .08s, box-shadow .12s;
+}
+.btn-create:hover { background: var(--silver-800); transform: translateY(-1px); }
+
 /* Futuristic background layers */
 .bg-space {
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(34,211,238,0.08), transparent 50%),
-    radial-gradient(900px 500px at 90% 0%, rgba(52,211,153,0.08), transparent 40%),
+    radial-gradient(1200px 600px at 10% -10%, rgba(217,220,223,0.06), transparent 50%),
+  radial-gradient(900px 500px at 90% 0%, rgba(127,132,135,0.08), transparent 40%),
     linear-gradient(180deg, #0B1220 0%, #0F172A 100%);
 }
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255,255,255,0.13) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.13) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 .bg-noise {

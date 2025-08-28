@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { listProcessMaps, requestUploadUrl, createProcessMap, deleteProcessMap } from '@services/api.ts';
 import type { ProcessMap } from '@store/types.ts';
 import { toast } from '../lib/toast.ts';
+import Modal from '../components/Modal.tsx';
 import { API_BASE_URL } from '../services/client.ts';
 
 export default function ProcessMapsRoute() {
@@ -108,16 +109,10 @@ function UploadButton({ onUpload }:{ onUpload:(f:File, title?:string)=>void }) {
 function PreviewModal({ item, onClose }:{ item: ProcessMap; onClose:()=>void }) {
   const previewSrc = toPublicUrl(item.blob_path);
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-4 w-full max-w-4xl space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">{item.title || item.blob_path}</h2>
-          <button onClick={onClose}>✕</button>
-        </div>
-        {renderPreview(item.file_type || '', previewSrc)}
-        <div className="text-xs opacity-70 break-all">{item.blob_path}</div>
-      </div>
-    </div>
+    <Modal title={item.title || item.blob_path} onClose={onClose} className="w-full max-w-4xl p-4">
+      {renderPreview(item.file_type || '', previewSrc)}
+      <div className="text-xs opacity-70 break-all mt-3">{item.blob_path}</div>
+    </Modal>
   );
 }
 

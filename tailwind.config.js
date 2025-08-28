@@ -16,15 +16,18 @@ export default {
             800: '#111827',
             900: '#0F172A'
           },
-          mint: '#34D399',
+          /* Mapped mint to a neutral / silver color per design direction */
+          mint: '#7F8487',
+          /* keep amber as-is for small highlights, map cyan to a soft neutral */
           amber: '#F59E0B',
-          cyan: '#22D3EE'
+          cyan: '#D9DCDD'
         }
       },
       boxShadow: {
         soft: '0 4px 16px -4px rgba(0,0,0,0.15)',
-        glow: '0 0 18px rgba(52, 211, 153, 0.35)',
-        'glow-lg': '0 0 36px rgba(52, 211, 153, 0.45)'
+        /* neutral silver glow instead of green/teal */
+        glow: '0 0 18px rgba(127,132,135,0.35)',
+        'glow-lg': '0 0 36px rgba(127,132,135,0.45)'
       },
       borderRadius: {
         '2xl': '1rem'

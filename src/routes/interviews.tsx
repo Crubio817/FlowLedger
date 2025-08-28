@@ -4,6 +4,7 @@ import type { Interview as ApiInterview } from '../services/models.ts';
 // Adapt Interview to include UI enums (backend currently leaves mode/status unconstrained strings)
 type Interview = ApiInterview & { status?: string; mode?: string };
 import { toast } from '../lib/toast.ts';
+import Modal from '../components/Modal.tsx';
 
 export default function InterviewsRoute() {
   const [rows, setRows] = useState<Interview[]>([]);
@@ -123,7 +124,7 @@ function CreateModal({ onClose, onCreated }:{ onClose:()=>void; onCreated:()=>vo
     if (!['Planned','Completed','Canceled'].includes(form.status as any)) { setErr('Invalid status'); return; }
     try {
       setSaving(true);
-  await createInterview(form as any);
+      await createInterview(form as any);
       onCreated();
     } catch(e:any) {
       setErr(e.message || 'Create failed');
@@ -131,47 +132,42 @@ function CreateModal({ onClose, onCreated }:{ onClose:()=>void; onCreated:()=>vo
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-4 w-full max-w-lg space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">New Interview</h2>
-          <button onClick={onClose}>✕</button>
-        </div>
-        {err && <div className="text-sm text-red-600">{err}</div>}
-        <div className="grid grid-cols-2 gap-3">
-          <label className="text-sm">Audit ID
-            <input className="w-full border rounded px-2 py-1" type="number" value={form.audit_id ?? ''} onChange={e=>setForm(f=>({...f, audit_id: Number(e.target.value)}))}/>
-          </label>
-          <label className="text-sm">Persona
-            <input className="w-full border rounded px-2 py-1" value={form.persona ?? ''} onChange={e=>setForm(f=>({...f, persona: e.target.value}))}/>
-          </label>
-          <label className="text-sm">Mode
-            <select className="w-full border rounded px-2 py-1" value={form.mode ?? ''} onChange={e=>setForm(f=>({...f, mode: e.target.value as any}))}>
-              <option value="Video">Video</option>
-              <option value="InPerson">InPerson</option>
-              <option value="Phone">Phone</option>
-            </select>
-          </label>
-          <label className="text-sm">Status
-            <select className="w-full border rounded px-2 py-1" value={form.status ?? 'Planned'} onChange={e=>setForm(f=>({...f, status: e.target.value as any}))}>
-              <option>Planned</option>
-              <option>Completed</option>
-              <option>Canceled</option>
-            </select>
-          </label>
-          <label className="col-span-2 text-sm">Scheduled (UTC ISO)
-            <input className="w-full border rounded px-2 py-1" placeholder="2025-08-15T17:00:00Z" value={form.scheduled_utc ?? ''} onChange={e=>setForm(f=>({...f, scheduled_utc: e.target.value}))}/>
-          </label>
-          <label className="col-span-2 text-sm">Notes
-            <textarea className="w-full border rounded px-2 py-1" rows={3} value={form.notes ?? ''} onChange={e=>setForm(f=>({...f, notes: e.target.value}))}/>
-          </label>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button className="border rounded px-3 py-2" onClick={onClose}>Cancel</button>
-          <button className="border rounded px-3 py-2" disabled={saving} onClick={save}>{saving?'Saving…':'Create'}</button>
-        </div>
+    <Modal title="New Interview" onClose={onClose} className="w-full max-w-lg p-4" footer={(
+      <div className="flex gap-2 justify-end">
+        <button className="btn-cancel border rounded px-3 py-2" onClick={onClose}>Cancel</button>
+        <button className="btn-create" disabled={saving} onClick={save}>{saving?'Saving…':'Create'}</button>
       </div>
-    </div>
+    )}>
+      {err && <div className="text-sm text-red-600">{err}</div>}
+      <div className="grid grid-cols-2 gap-3">
+        <label className="text-sm">Audit ID
+          <input className="w-full border rounded px-2 py-1" type="number" value={form.audit_id ?? ''} onChange={e=>setForm(f=>({...f, audit_id: Number(e.target.value)}))}/>
+        </label>
+        <label className="text-sm">Persona
+          <input className="w-full border rounded px-2 py-1" value={form.persona ?? ''} onChange={e=>setForm(f=>({...f, persona: e.target.value}))}/>
+        </label>
+        <label className="text-sm">Mode
+          <select className="w-full border rounded px-2 py-1" value={form.mode ?? ''} onChange={e=>setForm(f=>({...f, mode: e.target.value as any}))}>
+            <option value="Video">Video</option>
+            <option value="InPerson">InPerson</option>
+            <option value="Phone">Phone</option>
+          </select>
+        </label>
+        <label className="text-sm">Status
+          <select className="w-full border rounded px-2 py-1" value={form.status ?? 'Planned'} onChange={e=>setForm(f=>({...f, status: e.target.value as any}))}>
+            <option>Planned</option>
+            <option>Completed</option>
+            <option>Canceled</option>
+          </select>
+        </label>
+        <label className="col-span-2 text-sm">Scheduled (UTC ISO)
+          <input className="w-full border rounded px-2 py-1" placeholder="2025-08-15T17:00:00Z" value={form.scheduled_utc ?? ''} onChange={e=>setForm(f=>({...f, scheduled_utc: e.target.value}))}/>
+        </label>
+        <label className="col-span-2 text-sm">Notes
+          <textarea className="w-full border rounded px-2 py-1" rows={3} value={form.notes ?? ''} onChange={e=>setForm(f=>({...f, notes: e.target.value}))}/>
+        </label>
+      </div>
+    </Modal>
   );
 }
 
