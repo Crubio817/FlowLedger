@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { cn } from '../ui/utils.js';
 import {
   LayoutDashboard,
   BookMarked,
@@ -22,82 +24,102 @@ const links: LinkItem[] = [
 ];
 
 export const SideNav: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(true); // collapsed by default
+  const storageKey = 'ui:sidebarCollapsed';
+  const [collapsed, setCollapsed] = useState<boolean>(true);
+
+  // hydrate from localStorage and persist changes
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw != null) setCollapsed(raw === '1');
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch {}
+  }, [collapsed]);
 
   return (
-    <aside
-      className={`h-screen flex-shrink-0`}
-      style={{
-        background: '#191919',
-        width: collapsed ? '48px' : '240px',
-        transition: 'width 0.2s',
-        borderRight: '1px solid #333',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <aside className={cn('sidenav', collapsed && 'collapsed')}>
+      {/* header */}
       {collapsed ? (
-        <>
-          <div className="flex flex-col items-center pt-8 pb-2">
-            <div className="w-12 h-12 flex items-center justify-center mb-2 text-4xl" style={{ background: 'transparent' }}>
-              <span role="img" aria-label="logo">😊</span>
-            </div>
+        <div className="nav-section items-center">
+          <div className="flex flex-col items-center gap-2 pt-1">
+            <span role="img" aria-label="logo" className="text-xl">😊</span>
             <button
-              onClick={() => setCollapsed(false)}
-              className="w-9 h-9 flex items-center justify-center text-gray-300"
+              className="collapse-btn"
               aria-label="Expand sidebar"
+              aria-expanded={!collapsed}
+              onClick={() => setCollapsed(false)}
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           </div>
-          <div className="flex-1 flex flex-col items-center gap-1 mt-4">
-            {links.map(l => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                className={({ isActive }) =>
-                  `w-9 h-9 flex items-center justify-center text-gray-300 ${isActive ? 'bg-[#111111]' : ''}`
-                }
-                title={l.label}
-              >
-                {l.icon}
-              </NavLink>
-            ))}
-          </div>
-        </>
+        </div>
       ) : (
-        <div style={{ background: '#181818', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <div className="flex flex-col items-center pt-8 pb-2">
-            <div className="text-base font-semibold mb-2">FlowLedger</div>
+        <div className="nav-section">
+          <div className={cn('logo-row', 'flex items-center justify-between pl-2')}
+               aria-label="Brand">
+            <span className="inline-flex items-center gap-2">
+              <span role="img" aria-label="logo" className="text-xl">😊</span>
+              <span className="font-semibold">FlowLedger</span>
+            </span>
             <button
-              onClick={() => setCollapsed(true)}
-              className="w-9 h-9 flex items-center justify-center text-gray-300"
+              className="collapse-btn"
               aria-label="Collapse sidebar"
+              aria-expanded={!collapsed}
+              onClick={() => setCollapsed(true)}
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
-          </div>
-          <div className="flex-1 overflow-auto px-2 py-3">
-            <nav className="space-y-1">
-              {links.map(link => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                        className={({ isActive }) =>
-                          isActive
-                            ? 'flex items-center gap-3 px-3 py-2 cursor-pointer font-bold text-white text-lg bg-[#111] rounded-lg shadow-inner'
-                            : 'flex items-center gap-3 px-3 py-2 cursor-pointer text-gray-300 text-lg'
-                        }
-                >
-                  <div className="w-6 text-gray-300">{link.icon}</div>
-                  <div>{link.label}</div>
-                </NavLink>
-              ))}
-            </nav>
           </div>
         </div>
       )}
+
+      {/* primary nav */}
+      {collapsed ? (
+        <Tooltip.Provider delayDuration={400} skipDelayDuration={200}>
+          <nav aria-label="Primary" className="nav-section items-center">
+            {links.map((l) => (
+              <Tooltip.Root key={l.to}>
+                <Tooltip.Trigger asChild>
+                  <NavLink to={l.to} className={({ isActive }) => cn('icon-btn', isActive && 'active')}>
+                    {l.icon}
+                  </NavLink>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content className="popover px-2 py-1 text-xs" side="right" sideOffset={8}>
+                    {l.label}
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            ))}
+          </nav>
+        </Tooltip.Provider>
+      ) : (
+        <nav aria-label="Primary" className="nav-section">
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg',
+                  isActive ? 'active bg-[rgba(255,255,255,0.03)] text-white font-semibold' : 'text-[#f5f6f7]'
+                )
+              }
+            >
+              <span className="w-5 h-5 inline-flex items-center justify-center">{link.icon}</span>
+              <span className="label-text">{link.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      )}
+
+      {/* footer/meta placeholder */}
+      <div className="meta text-xs opacity-70">
+        <div className="footer-text">v1.0</div>
+      </div>
     </aside>
   );
 };
-

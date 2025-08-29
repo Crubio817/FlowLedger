@@ -52,29 +52,48 @@ async function parseJSON<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+async function requestWithRetry<T>(url: string, fetchOpts: RequestInit, tries = 3): Promise<T> {
+  let attempt = 0;
+  let lastErr: any = null;
+  while (attempt < tries) {
+    try {
+      const res = await fetch(url, fetchOpts);
+      return await parseJSON<T>(res);
+    } catch (e: any) {
+      lastErr = e;
+      attempt += 1;
+      // Decide if we should retry: transient network or server errors
+      const msg = String(e?.message || '').toLowerCase();
+      const isTransient = (typeof e?.code === 'number' && e.code >= 500) || msg.includes('etimeout') || msg.includes('failed to connect') || msg.includes('connect') || msg.includes('timeout') || msg.includes('econnrefused');
+      if (!isTransient || attempt >= tries) break;
+      // progressive backoff
+      const backoff = 200 * attempt;
+      // eslint-disable-next-line no-console
+      console.debug(`[http] transient error, retrying in ${backoff}ms (attempt ${attempt}/${tries})`, e && (e.message || e));
+      await sleep(backoff);
+      continue;
+    }
+  }
+  throw lastErr;
+}
+
 export const http = {
   async get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, { credentials: creds });
-    return parseJSON<T>(res);
+  const url = `${API_BASE_URL}${path}`;
+    return requestWithRetry<T>(url, { method: 'GET', credentials: creds });
   },
   async post<T>(path: string, body?: unknown, headers: Record<string,string> = {}): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'POST', credentials: creds,
-      headers: { 'Content-Type': 'application/json', ...headers },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-    return parseJSON<T>(res);
+  const url = `${API_BASE_URL}${path}`;
+    return requestWithRetry<T>(url, { method: 'POST', credentials: creds, headers: { 'Content-Type': 'application/json', ...headers }, body: body !== undefined ? JSON.stringify(body) : undefined });
   },
   async put<T>(path: string, body?: unknown, headers: Record<string,string> = {}): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'PUT', credentials: creds,
-      headers: { 'Content-Type': 'application/json', ...headers },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-    return parseJSON<T>(res);
+  const url = `${API_BASE_URL}${path}`;
+    return requestWithRetry<T>(url, { method: 'PUT', credentials: creds, headers: { 'Content-Type': 'application/json', ...headers }, body: body !== undefined ? JSON.stringify(body) : undefined });
   },
   async del<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, { method: 'DELETE', credentials: creds });
-    return parseJSON<T>(res);
+  const url = `${API_BASE_URL}${path}`;
+    return requestWithRetry<T>(url, { method: 'DELETE', credentials: creds });
   },
 };

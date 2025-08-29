@@ -20,8 +20,53 @@ export type ApiEnvelope<T> = { status: string; data: T; meta?: PageMeta & Record
 
 function withErrors<T>(fn: () => Promise<T>, errMsg = 'Request failed'): Promise<T> {
   return fn().catch((e: any) => {
-    const msg = e?.message || errMsg;
+    // Normalize message: server sometimes returns a JSON string in e.message.
+    let msg = errMsg;
+    try {
+      if (e && typeof e === 'object') {
+        // If the fetch wrapper threw our HttpError shape
+        if (typeof e.code === 'number' && typeof e.message === 'string') {
+          // try parsing message as JSON
+          const raw = e.message;
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed?.error?.message) msg = String(parsed.error.message);
+            else if (parsed?.message) msg = String(parsed.message);
+            else msg = raw;
+            if (parsed?.error?.code === 'ETIMEOUT') {
+              msg = 'Server timeout (DB connect). Please try again shortly.';
+            }
+          } catch {
+            // not JSON
+            msg = String(e.message || errMsg);
+          }
+          // for HTTP 5xx provide a compact message
+          if (e.code >= 500 && !msg) msg = `Server error (${e.code})`;
+        } else if (e?.message && typeof e.message === 'string') {
+          // non-HttpError with textual message (e.g., fetch TypeError)
+          const raw = e.message;
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed?.error?.message) msg = String(parsed.error.message);
+            else if (parsed?.message) msg = String(parsed.message);
+            else msg = raw;
+            if (parsed?.error?.code === 'ETIMEOUT') msg = 'Server timeout (DB connect). Please try again shortly.';
+          } catch {
+            msg = raw || errMsg;
+          }
+        } else {
+          msg = errMsg;
+        }
+      } else {
+        msg = String(e) || errMsg;
+      }
+    } catch (_inner) {
+      msg = errMsg;
+    }
+
+    // Show a friendly toast
     toast.error(msg);
+    // rethrow so callers can inspect and handle
     throw e;
   });
 }
@@ -193,7 +238,41 @@ export async function listAudits(page = 1, limit = 20, sort = 'created_utc', ord
 
 // Create a single engagement
 export async function createEngagement(payload: { client_id: number; name: string; status?: string; start_utc?: string | null; end_utc?: string | null; notes?: string | null }): Promise<any> {
-  return withErrors(() => http.post('/client-engagements', payload), 'Create engagement failed');
+  // Try the straightforward call first, then retry with alternate key names/envelopes
+  try {
+    return await withErrors(() => http.post('/client-engagements', payload), 'Create engagement failed');
+  } catch (e: any) {
+    // If server complains about missing required fields, try common alternate shapes
+    const raw = e && (e.message || (e.response && JSON.stringify(e.response)) || '');
+    const lower = String(raw).toLowerCase();
+    if (lower.includes('required') || lower.includes('missing') || lower.includes('required field')) {
+      // Build some common alternate payload shapes
+      const alternates: any[] = [];
+      // common name/title variants
+      alternates.push({ ...payload, title: payload.name });
+      alternates.push({ ...payload, engagement_name: payload.name });
+      alternates.push({ ...payload, engagementTitle: payload.name });
+      // common date key variants
+      alternates.push({ ...payload, start_date: payload.start_utc, end_date: payload.end_utc });
+      alternates.push({ ...payload, startDate: payload.start_utc, endDate: payload.end_utc });
+      // wrapped envelopes
+      alternates.push({ data: payload });
+      alternates.push({ engagement: payload });
+      alternates.push({ payload });
+
+      for (const alt of alternates) {
+        try {
+          // eslint-disable-next-line no-console
+          console.debug('[api] createEngagement retry alt payload:', JSON.stringify(alt));
+          return await withErrors(() => http.post('/client-engagements', alt), 'Create engagement failed (retry)');
+        } catch (inner) {
+          // continue to next alternate
+        }
+      }
+    }
+    // rethrow original error if all retries fail
+    throw e;
+  }
 }
 
 // Types for tag suggestion feature (AI-assisted)
@@ -201,7 +280,8 @@ export type TagSuggestion = { tag_id?: number; tag_name: string; reason?: string
 export type TagSuggestResponse = { existing: TagSuggestion[]; new: TagSuggestion[]; rationale?: string };
 
 // Suggest tags for a client note using AI endpoint
-export async function suggestTags(payload: { client_id: number; note: string; maxExisting?: number; maxNew?: number }): Promise<ApiEnvelope<TagSuggestResponse>> {
+export async function suggestTags(payload: { client_id?: number; note: string; maxExisting?: number; maxNew?: number }): Promise<ApiEnvelope<TagSuggestResponse>> {
+  // backend may accept requests with or without a client_id; keep helper flexible
   return withErrors(() => http.post<ApiEnvelope<TagSuggestResponse>>('/ai/tag-suggest', payload), 'Tag suggestion failed');
 }
 
@@ -289,6 +369,19 @@ export async function getClientContact(id: number): Promise<ClientContact> {
 
 export async function createClientContact(payload: Partial<ClientContact>): Promise<ClientContact> {
   return withErrors(() => http.post('/client-contacts', payload), 'Create contact failed');
+}
+
+// Contact social profiles (e.g., LinkedIn) CRUD
+export type ContactSocialProfile = { id?: number; contact_id?: number; provider?: string; profile_url?: string; is_primary?: boolean; created_utc?: string };
+
+export async function listContactSocialProfiles(page = 1, limit = 25, contactId?: number): Promise<{ data: ContactSocialProfile[]; meta?: PageMeta }> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (contactId) q.set('contact_id', String(contactId));
+  return withErrors(() => http.get(`/contact-social-profiles?${q.toString()}`), 'Failed to load contact social profiles');
+}
+
+export async function createContactSocialProfile(payload: { contact_id: number; provider: string; profile_url: string; is_primary?: boolean }): Promise<ContactSocialProfile> {
+  return withErrors(() => http.post('/contact-social-profiles', payload), 'Create contact social profile failed');
 }
 
 export async function updateClientContact(id: number, payload: Partial<ClientContact>): Promise<ClientContact> {
