@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getClientsOverview, createClient, createClientContact, clientSetup, createEngagement } from '../services/api.ts';
+import { getClientsOverview, createClient, createClientContact, clientSetup, createEngagement, listClientTags, createClientTag, updateClientTag, deleteClientTag, applyTagToClient } from '../services/api.ts';
 import { toast } from '../lib/toast.ts';
 import type { ClientsOverviewItem } from '../services/models.ts';
 import { formatUtc } from '../utils/date.ts';
@@ -15,6 +15,7 @@ export const ClientsRoute: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [engageOpen, setEngageOpen] = useState(false);
+  const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const loadRows = React.useCallback(async () => {
     setLoading(true);
@@ -53,6 +54,7 @@ export const ClientsRoute: React.FC = () => {
               <span style={{fontWeight:600, fontSize:20}}>+</span>
             </button>
             <button className="px-3 py-2 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-4)] text-sm" onClick={()=>setEngageOpen(true)}>New Engagement</button>
+            <button className="px-3 py-2 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-4)] text-sm" onClick={()=>setTagManagerOpen(true)}>Manage tags</button>
           </div>
         </div>
         <p className="text-sm text-[var(--text-2)]">Snapshot of client engagement & onboarding signals.</p>
@@ -123,7 +125,7 @@ export const ClientsRoute: React.FC = () => {
         )}
       </div>
 
-      <ClientsModalsWrapper createOpen={createOpen} setCreateOpen={setCreateOpen} engageOpen={engageOpen} setEngageOpen={setEngageOpen} loadRows={loadRows} rows={rows} />
+  <ClientsModalsWrapper createOpen={createOpen} setCreateOpen={setCreateOpen} engageOpen={engageOpen} setEngageOpen={setEngageOpen} tagManagerOpen={tagManagerOpen} setTagManagerOpen={setTagManagerOpen} loadRows={loadRows} rows={rows} />
     </div>
   );
 };
@@ -131,7 +133,7 @@ export const ClientsRoute: React.FC = () => {
 export default ClientsRoute;
 
 // Render modals adjacent to route so they can refresh the list
-function ClientsModalsWrapper({ createOpen, setCreateOpen, engageOpen, setEngageOpen, loadRows, rows }:{ createOpen:boolean; setCreateOpen:(v:boolean)=>void; engageOpen:boolean; setEngageOpen:(v:boolean)=>void; loadRows:()=>Promise<void>; rows: ClientsOverviewItem[] }) {
+function ClientsModalsWrapper({ createOpen, setCreateOpen, engageOpen, setEngageOpen, tagManagerOpen, setTagManagerOpen, loadRows, rows }:{ createOpen:boolean; setCreateOpen:(v:boolean)=>void; engageOpen:boolean; setEngageOpen:(v:boolean)=>void; tagManagerOpen:boolean; setTagManagerOpen:(v:boolean)=>void; loadRows:()=>Promise<void>; rows: ClientsOverviewItem[] }) {
   return (
     <>
       {createOpen && (
@@ -139,6 +141,9 @@ function ClientsModalsWrapper({ createOpen, setCreateOpen, engageOpen, setEngage
       )}
       {engageOpen && (
         <CreateEngagementModal rows={rows} onClose={()=>setEngageOpen(false)} onCreated={async ()=>{ await loadRows(); setEngageOpen(false); }} />
+      )}
+      {tagManagerOpen && (
+        <TagManagerModal onClose={()=>setTagManagerOpen(false)} onSaved={async ()=>{ await loadRows(); setTagManagerOpen(false); }} />
       )}
     </>
   );
@@ -273,8 +278,13 @@ function CreateEngagementModal({ onClose, onCreated, rows, preselect }:{ onClose
   const [status, setStatus] = useState('active');
   const [startDate, setStartDate] = useState('');
   const [notes, setNotes] = useState('');
+  // tag suggestion state
+  const [suggesting, setSuggesting] = useState(false);
+  const [tagSuggestErr, setTagSuggestErr] = useState<string | null>(null);
+  const [suggestionsTags, setSuggestionsTags] = useState<{ existing: { tag_id?: number; tag_name: string; reason?: string }[]; new: { tag_name: string; reason?: string }[]; rationale?: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string|null>(null);
+  const [pendingTags, setPendingTags] = useState<{ tag_id?: number; tag_name: string }[]>([]);
   const notesMax = 1000;
   const modalRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -342,11 +352,83 @@ function CreateEngagementModal({ onClose, onCreated, rows, preselect }:{ onClose
     try {
       setSaving(true);
       const start_utc = startDate ? new Date(startDate + 'T00:00:00Z').toISOString() : null;
-      await createEngagement({ client_id: Number(clientId), name: name.trim(), status, start_utc, notes: notes || null });
-      onCreated();
+      const engagement = await createEngagement({ client_id: Number(clientId), name: name.trim(), status, start_utc, notes: notes || null });
+      // After engagement is created, persist pending tags (create tag if needed, then map)
+      if (pendingTags && pendingTags.length > 0) {
+        const api = await import('../services/api.ts');
+        for (const t of pendingTags) {
+          try {
+            if (t.tag_id) {
+              await api.createClientTagMap(Number(clientId), Number(t.tag_id));
+            } else {
+              // create tag then map
+              const created = await api.createClientTag({ tag_name: t.tag_name });
+              const anyCreated: any = created;
+              const tagId = anyCreated && (anyCreated.tag_id || anyCreated.data?.tag_id || anyCreated.tagId);
+              if (tagId) await api.createClientTagMap(Number(clientId), Number(tagId));
+            }
+          } catch (e:any) {
+            // non-blocking: continue with other tags
+            console.debug('tag map error', e && (e.message || e));
+          }
+        }
+      }
+      await onCreated();
       onClose();
     } catch (e:any) {
       setErr(formatServerError(e));
+    } finally { setSaving(false); }
+  };
+
+  const runTagSuggest = async () => {
+    setTagSuggestErr(null);
+    setSuggestionsTags(null);
+    if (!clientId) { setTagSuggestErr('Select a client first'); return; }
+    if (!notes.trim()) { setTagSuggestErr('Enter some notes to analyze'); return; }
+    try {
+      setSuggesting(true);
+      // call API helper
+      // import suggestTags from services/api.ts at top
+      // lazy require to keep top-of-file imports unchanged pattern
+      const api = await import('../services/api.ts');
+  const r = await api.suggestTags({ client_id: Number(clientId), note: notes, maxExisting: 5, maxNew: 2 });
+  // api.suggestTags now returns an ApiEnvelope<TagSuggestResponse>
+  const body = (r && (r.data ?? r)) || { existing: [], new: [], rationale: undefined };
+  setSuggestionsTags({ existing: body.existing || [], new: body.new || [], rationale: body.rationale });
+    } catch (e:any) {
+      setTagSuggestErr(e?.message || 'Tag suggestion failed');
+    } finally { setSuggesting(false); }
+  };
+
+  // Instead of immediately persisting, add suggestion to pendingTags to be saved after engagement creation
+  const createAndApply = async (tagName: string) => {
+    if (!clientId) return setTagSuggestErr('Select a client first');
+    // optimistic: add to pendingTags list (no tag_id yet)
+    setPendingTags(s => [...s, { tag_name: tagName }]);
+    setSuggestionsTags(null);
+  toast.success(`Will apply tag '${tagName}' after engagement is created`);
+  };
+
+  const [quickTag, setQuickTag] = useState('');
+  const createAndApplyQuick = async () => {
+    setTagSuggestErr(null);
+    if (!clientId) return setTagSuggestErr('Select a client first');
+    if (!quickTag.trim()) return setTagSuggestErr('Enter a tag name');
+    try {
+      setSaving(true);
+      const api = await import('../services/api.ts');
+      // create global tag first (backend may allow create+apply but do explicit create for consistency)
+      let created;
+      try { created = await api.createClientTag({ tag_name: quickTag.trim() }); } catch (e:any) {
+        // if creation fails because tag exists, ignore and continue to apply
+        created = null;
+      }
+  // add to pendingTags to be applied after engagement is created
+  setPendingTags(s => [...s, { tag_name: quickTag.trim() }]);
+  toast.success(`Will apply tag '${quickTag.trim()}' after engagement is created`);
+  setQuickTag('');
+    } catch (e:any) {
+      setTagSuggestErr(e?.message || 'Failed to create/apply tag');
     } finally { setSaving(false); }
   };
 
@@ -409,7 +491,142 @@ function CreateEngagementModal({ onClose, onCreated, rows, preselect }:{ onClose
             <label className="text-sm">Notes</label>
             <textarea rows={4} value={notes} onChange={e=>setNotes(e.target.value)} className="mt-1 w-full rounded px-3 py-2 bg-[#111316] text-white" maxLength={notesMax} />
             <div className="flex items-center justify-between text-xs text-[var(--text-2)] mt-1"><span>Optional notes</span><span>{notes.length}/{notesMax}</span></div>
+            <div className="mt-2 flex items-center gap-2">
+              <button type="button" className="px-3 py-1 rounded bg-[var(--surface-3)] text-sm" onClick={runTagSuggest} disabled={suggesting || !notes.trim() || !clientId}>{suggesting ? 'Analyzing…' : 'Suggest tags'}</button>
+              <div className="text-xs text-[var(--text-2)]">Analyze notes to suggest existing or new tags.</div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <input value={quickTag} onChange={e=>setQuickTag(e.target.value)} placeholder="Quick add tag" className="flex-1 rounded px-3 py-1 bg-[#111316] text-white" />
+              <button className="px-3 py-1 rounded bg-[var(--surface-3)] text-sm" onClick={createAndApplyQuick} disabled={!quickTag.trim() || !clientId || saving}>Add + Apply</button>
+            </div>
+            {tagSuggestErr && <div className="text-xs text-red-400 mt-2">{tagSuggestErr}</div>}
+            {suggestionsTags && (
+              <div className="mt-3 space-y-2">
+                {suggestionsTags.rationale && (
+                  <div className="text-xs text-[var(--text-2)] italic mb-2">Analysis: {suggestionsTags.rationale}</div>
+                )}
+                <div className="text-xs text-[var(--text-2)]">Existing suggestions</div>
+                <div className="flex flex-wrap gap-2">
+                  {suggestionsTags.existing.length === 0 && <div className="text-xs text-[var(--text-2)]">No existing tag suggestions</div>}
+                  {suggestionsTags.existing.map(t => (
+                    <button key={t.tag_name} title={t.reason} className={badgeBase + ' bg-indigo-600 text-white'} onClick={()=>{ /* apply existing tag - ideally backend handles idempotency */ createAndApply(t.tag_name); }}>{t.tag_name}</button>
+                  ))}
+                </div>
+                <div className="text-xs text-[var(--text-2)]">New suggestions</div>
+                <div className="flex flex-wrap gap-2">
+                  {suggestionsTags.new.length === 0 && <div className="text-xs text-[var(--text-2)]">No new tag suggestions</div>}
+                  {suggestionsTags.new.map(t => (
+                    <div key={t.tag_name} className="flex items-center gap-2">
+                      <span title={t.reason} className={badgeBase + ' bg-transparent text-[var(--text-2)] border border-dashed border-white/10'}>{t.tag_name}</span>
+                      <button className="px-2 py-1 rounded bg-[var(--surface-3)] text-sm" onClick={()=>createAndApply(t.tag_name)}>Create + Apply</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// TagManagerModal: manages global client tags and allows quick-create/apply
+function TagManagerModal({ onClose, onSaved }:{ onClose:()=>void; onSaved:()=>void }) {
+  const [tags, setTags] = useState<{ tag_id: number; tag_name: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string|null>(null);
+  const [newTag, setNewTag] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const api = await import('../services/api.ts');
+      const res = await api.listClientTags(1, 200);
+      const body = (res && (res.data ?? res)) || [];
+      setTags(body || []);
+    } catch (e:any) {
+      setErr(e?.message || 'Failed to load tags');
+    } finally { setLoading(false); }
+  };
+
+  React.useEffect(()=>{ load(); }, []);
+
+  const createTag = async () => {
+    if (!newTag.trim()) return;
+    try {
+      const api = await import('../services/api.ts');
+      const created = await api.createClientTag({ tag_name: newTag.trim() });
+      setTags(s => [created, ...s]);
+      setNewTag('');
+      toast.success('Tag created');
+    } catch (e:any) { setErr(e?.message || 'Create failed'); }
+  };
+
+  const saveEdit = async (id: number) => {
+    if (!editingName.trim()) return;
+    try {
+      const api = await import('../services/api.ts');
+      const updated = await api.updateClientTag(id, { tag_name: editingName.trim() });
+      setTags(s => s.map(t => t.tag_id === id ? updated : t));
+      setEditingId(null);
+      setEditingName('');
+      toast.success('Tag updated');
+    } catch (e:any) { setErr(e?.message || 'Update failed'); }
+  };
+
+  const doDelete = async (id: number) => {
+    try {
+      const api = await import('../services/api.ts');
+      await api.deleteClientTag(id);
+      setTags(s => s.filter(t => t.tag_id !== id));
+      toast.success('Tag deleted');
+    } catch (e:any) { setErr(e?.message || 'Delete failed'); }
+  };
+
+  return (
+    <Modal title="Manage Tags" onClose={onClose} className="bg-[#0f1213] w-full max-w-md p-6" footer={(
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <button className="btn-cancel" onClick={onClose}>Close</button>
+        </div>
+        <div>
+          <button className="btn-create" onClick={onSaved}>Done</button>
+        </div>
+      </div>
+    )}>
+      {err && <div className="text-sm text-red-500 mb-2">{err}</div>}
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <input value={newTag} onChange={e=>setNewTag(e.target.value)} className="flex-1 rounded px-3 py-2 bg-[#111316] text-white" placeholder="New tag name" />
+          <button className="px-3 py-2 rounded bg-[var(--surface-3)]" onClick={createTag}>Add</button>
+        </div>
+        <div className="max-h-72 overflow-auto">
+          {loading && <div className="text-sm text-[var(--text-2)]">Loading…</div>}
+          {!loading && tags.length === 0 && <div className="text-sm text-[var(--text-2)]">No tags</div>}
+          {!loading && tags.map(t => (
+            <div key={t.tag_id} className="flex items-center justify-between gap-2 py-1">
+              {editingId === t.tag_id ? (
+                <>
+                  <input value={editingName} onChange={e=>setEditingName(e.target.value)} className="flex-1 rounded px-3 py-1 bg-[#111316] text-white" />
+                  <div className="flex gap-2">
+                    <button className="px-2 py-1 rounded bg-[var(--surface-3)]" onClick={()=>saveEdit(t.tag_id)}>Save</button>
+                    <button className="px-2 py-1 rounded bg-[var(--surface-3)]" onClick={()=>{ setEditingId(null); setEditingName(''); }}>Cancel</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={badgeBase + ' bg-[var(--surface-4)] text-[var(--text-2)] flex-1'}>{t.tag_name}</div>
+                  <div className="flex gap-2">
+                    <button className="px-2 py-1 rounded bg-[var(--surface-3)]" onClick={()=>{ setEditingId(t.tag_id); setEditingName(t.tag_name); }}>Edit</button>
+                    <button className="px-2 py-1 rounded bg-red-600" onClick={()=>doDelete(t.tag_id)}>Delete</button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </Modal>

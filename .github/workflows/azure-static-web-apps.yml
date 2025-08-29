@@ -39,7 +39,7 @@ jobs:
           api_location: ""
           app_artifact_location: "dist"
         env:
-          VITE_API_BASE_URL: https://flowledger-api-func.azurewebsites.net/api
+          VITE_API_BASE_URL: https://flowledger-api-web.azurewebsites.net/api
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

@@ -10,6 +10,7 @@ type Props = {
 
 export default function Modal({ title, children, footer, onClose, className }: Props) {
   const innerRef = useRef<HTMLDivElement | null>(null);
+  const titleId = React.useId ? React.useId() : 'modal-title';
 
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
@@ -51,17 +52,27 @@ export default function Modal({ title, children, footer, onClose, className }: P
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div ref={innerRef} tabIndex={-1} className={`bg-white dark:bg-[var(--raiders-black)] rounded-2xl shadow-lg w-full max-w-lg overflow-hidden ${className || ''}`} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50" onClick={onClose} role="presentation">
+      <div
+        ref={innerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        className={`bg-white dark:bg-[var(--raiders-black)] rounded-2xl shadow-lg w-full max-w-lg overflow-hidden ${className || ''}`}
+        onClick={e => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]">
-          <h3 className="font-semibold">{title}</h3>
+          <h3 id={title ? titleId : undefined} className="font-semibold">{title}</h3>
           <button aria-label="Close" className="icon-btn" onClick={onClose}>✕</button>
         </div>
+
         <div className="p-4">
           {children}
         </div>
+
         {footer && (
-          <div className="p-3 border-t border-[var(--border-subtle)] bg-[var(--surface-2)]">
+          <div className="modal-footer">
             {footer}
           </div>
         )}

@@ -10,18 +10,18 @@ const env = (import.meta as any).env || {};
 let resolvedBase = env.VITE_API_BASE_URL as string | undefined;
 if (!resolvedBase) {
   if (env.DEV) {
-    resolvedBase = 'http://localhost:4000/api';
+    resolvedBase = 'http://localhost:4001/api';
   } else {
     // At runtime (preview/prod), prefer local backend when the site is opened on localhost in the browser
     try {
       const host = typeof window !== 'undefined' ? window.location.hostname : undefined;
       if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
-        resolvedBase = 'http://localhost:4000/api';
+        resolvedBase = 'http://localhost:4001/api';
       } else {
-        resolvedBase = 'https://flowledger-api-func.azurewebsites.net/api';
+  resolvedBase = 'https://flowledger-api-web.azurewebsites.net/api';
       }
     } catch {
-      resolvedBase = 'https://flowledger-api-func.azurewebsites.net/api';
+  resolvedBase = 'https://flowledger-api-web.azurewebsites.net/api';
     }
   }
 }

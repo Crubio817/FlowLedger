@@ -98,7 +98,7 @@ The API base URL is resolved dynamically based on the environment:
 
 1.  **`.env` file:** `VITE_API_BASE_URL` in a `.env` file will always take precedence.
 2.  **Development:** When running `npm run dev`, it defaults to `/api`. This uses Vite's proxy to redirect requests to your local backend at `http://localhost:4000`, avoiding CORS issues. This is configured in `vite.config.ts` and `.env.development`.
-3.  **Production:** In a production build, it defaults to the deployed Azure Function URL specified in the GitHub Actions workflow (`https://flowledger-api-func.azurewebsites.net/api`).
+3.  **Production:** In a production build, it defaults to the deployed API URL specified in the GitHub Actions workflow (`https://flowledger-api-web.azurewebsites.net/api`).
 
 This ensures a seamless development experience while maintaining a production-ready configuration for deployment.
 

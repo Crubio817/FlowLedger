@@ -196,6 +196,66 @@ export async function createEngagement(payload: { client_id: number; name: strin
   return withErrors(() => http.post('/client-engagements', payload), 'Create engagement failed');
 }
 
+// Types for tag suggestion feature (AI-assisted)
+export type TagSuggestion = { tag_id?: number; tag_name: string; reason?: string };
+export type TagSuggestResponse = { existing: TagSuggestion[]; new: TagSuggestion[]; rationale?: string };
+
+// Suggest tags for a client note using AI endpoint
+export async function suggestTags(payload: { client_id: number; note: string; maxExisting?: number; maxNew?: number }): Promise<ApiEnvelope<TagSuggestResponse>> {
+  return withErrors(() => http.post<ApiEnvelope<TagSuggestResponse>>('/ai/tag-suggest', payload), 'Tag suggestion failed');
+}
+
+// Apply or create a tag for a client. Assumption: backend exposes POST /clients/{clientId}/tags with { tag_name }
+// If your backend exposes a different route, adjust accordingly.
+export async function applyTagToClient(clientId: number, tagName: string): Promise<any> {
+  // Legacy helper: create tag if needed then map to client
+  // Prefer using createClientTag + createClientTagMap directly for explicit control.
+  try {
+    const created: any = await http.post('/client-tags', { tag_name: tagName });
+    const tagId = (created && (created.tag_id || created.data?.tag_id));
+    if (!tagId) throw new Error('Tag creation failed');
+    return await http.post('/client-tag-map', { client_id: clientId, tag_id: Number(tagId) });
+  } catch (e: any) {
+    // Fallback: try mapping by retrieving tags list
+    const list = await http.get<ApiEnvelope<ClientTag[]>>('/client-tags');
+    const found = (list && (list.data ?? list)).find(t => String(t.tag_name).toLowerCase() === String(tagName).toLowerCase());
+    if (found && found.tag_id) {
+      return await http.post('/client-tag-map', { client_id: clientId, tag_id: found.tag_id });
+    }
+    throw e;
+  }
+}
+
+// Create/Delete client->tag mapping
+export async function createClientTagMap(clientId: number, tagId: number): Promise<any> {
+  return withErrors(() => http.post('/client-tag-map', { client_id: clientId, tag_id: tagId }), 'Create client->tag mapping failed');
+}
+
+export async function deleteClientTagMap(clientId: number, tagId: number): Promise<any> {
+  const q = new URLSearchParams({ client_id: String(clientId), tag_id: String(tagId) });
+  return withErrors(() => http.del(`/client-tag-map?${q.toString()}`), 'Delete client->tag mapping failed');
+}
+
+// Client tags management (list/create/update/delete)
+export type ClientTag = { tag_id: number; tag_name: string };
+
+export async function listClientTags(page = 1, limit = 100): Promise<ApiEnvelope<ClientTag[]>> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return withErrors(() => http.get<ApiEnvelope<ClientTag[]>>(`/client-tags?${q.toString()}`), 'Failed to load client tags');
+}
+
+export async function createClientTag(payload: { tag_name: string }): Promise<ClientTag> {
+  return withErrors(() => http.post('/client-tags', payload), 'Create tag failed');
+}
+
+export async function updateClientTag(id: number, payload: { tag_name: string }): Promise<ClientTag> {
+  return withErrors(() => http.put(`/client-tags/${id}`, payload), 'Update tag failed');
+}
+
+export async function deleteClientTag(id: number): Promise<{ ok: true } | any> {
+  return withErrors(() => http.del(`/client-tags/${id}`), 'Delete tag failed');
+}
+
 export async function getClientsOverview(limit = 50, query?: string): Promise<ApiEnvelope<ClientsOverviewItem[]>> {
   const q = new URLSearchParams({ limit: String(limit) });
   if (query) q.set('q', String(query));
