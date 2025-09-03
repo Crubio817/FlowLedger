@@ -6,6 +6,7 @@ type Props = {
   footer?: React.ReactNode;
   onClose: () => void;
   className?: string;
+  closeOnBackdrop?: boolean;
 };
 
 export default function Modal({ title, children, footer, onClose, className }: Props) {
@@ -47,17 +48,17 @@ export default function Modal({ title, children, footer, onClose, className }: P
       window.removeEventListener('keydown', trap);
       if (prev && typeof prev.focus === 'function') prev.focus();
     };
-  }, [onClose]);
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose} role="presentation">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={e => { /* default: do not close on backdrop click */ }} role="presentation">
       <div
         ref={innerRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
-        className={`relative w-full rounded-2xl overflow-hidden border border-white/10 shadow-[0_28px_80px_rgba(0,0,0,0.65)] bg-[var(--surface-2)] text-[var(--text-1)] ${className || ''}`}
+        className={`relative w-full max-w-[1100px] mx-auto rounded-2xl overflow-hidden border border-white/10 shadow-[0_28px_80px_rgba(0,0,0,0.65)] bg-[var(--surface-2)] text-[var(--text-1)] ${className || ''}`}
         onClick={e => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[var(--surface-2)]/95 backdrop-blur">

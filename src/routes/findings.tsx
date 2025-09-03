@@ -9,6 +9,7 @@ interface Finding extends ApiFinding {
 }
 import { toast } from '../lib/toast.ts';
 import { useUnsavedGuard } from '../hooks/useUnsavedGuard.ts';
+import { PageTitleEditorial } from '../components/PageTitles.tsx';
 import { savedToast } from '../lib/saveNotifier.ts';
 
 export default function FindingsRoute() {
@@ -132,12 +133,17 @@ export default function FindingsRoute() {
 
   return (
     <main className="p-6 print:p-0 print:bg-white print:text-black">
-      <header className="flex items-center justify-between mb-4 print:mb-2">
-        <h1 className="text-2xl font-semibold">Findings & Recommendations — Audit #{auditId}</h1>
+      <PageTitleEditorial
+        eyebrow="Audit Results"
+        title={`Findings & Recommendations — Audit #${auditId}`}
+        subtitle="Comprehensive analysis of audit discoveries and recommended remediation actions"
+      />
+      
+      <div className="flex justify-end mb-4 print:mb-2">
         <div className="text-sm opacity-70">
           {saving ? 'Saving…' : dirty ? 'Unsaved changes' : doc?.updated_utc ? `Updated ${new Date(doc.updated_utc).toLocaleString()}` : ''}
         </div>
-      </header>
+      </div>
 
       <div className="flex items-center gap-2 mb-4 print:hidden">
         <button className="rounded-xl border px-3 py-2" onClick={exportJson}>Export JSON</button>

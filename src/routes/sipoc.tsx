@@ -6,6 +6,7 @@ interface SipocDoc extends ApiSipocDoc { audit_id?: number }
 import { toast } from '../lib/toast.ts';
 import { useUnsavedGuard } from '../hooks/useUnsavedGuard.ts';
 import { savedToast } from '../lib/saveNotifier.ts';
+import { PageTitleEditorial } from '../components/PageTitles.tsx';
 
 function ensureStrings(arr?: unknown[]): string[] {
   if (!Array.isArray(arr)) return [];
@@ -109,12 +110,17 @@ export default function SipocRoute() {
 
   return (
     <main className="p-6 space-y-6">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">SIPOC — Audit #{auditId}</h1>
+      <PageTitleEditorial
+        eyebrow="Process Analysis"
+        title={`SIPOC — Audit #${auditId}`}
+        subtitle="Suppliers, Inputs, Process, Outputs, and Customers analysis framework"
+      />
+      
+      <div className="flex justify-end">
         <div className="text-sm opacity-70">
           {saving ? 'Saving…' : dirty ? 'Unsaved changes' : ''}
         </div>
-      </header>
+      </div>
 
       <Toolbar onExport={exportJson} onImport={importJson} onSave={async () => {
         try {

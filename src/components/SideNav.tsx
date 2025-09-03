@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import * as Tooltip from '@radix-ui/react-tooltip';
+import Tooltip from '@mui/material/Tooltip';
+import logoPng from '../assets/logo.png';
 import { cn } from '../ui/utils.js';
 import {
   LayoutDashboard,
@@ -17,10 +18,14 @@ type LinkItem = { to: string; label: string; icon: React.ReactNode };
 const links: LinkItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { to: '/clients', label: 'Clients', icon: <Users2 size={18} /> },
+  { to: '/audits', label: 'Audits', icon: <StickyNote size={18} /> },
+  { to: '/clients/engagements', label: 'Projects', icon: <Workflow size={18} /> },
+  { to: '/clients/onboarding', label: 'Onboarding', icon: <BookMarked size={18} /> },
   { to: '/sipoc', label: 'SIPOC', icon: <BookMarked size={18} /> },
   { to: '/interviews', label: 'Interviews', icon: <Users2 size={18} /> },
   { to: '/process-maps', label: 'Process Maps', icon: <Workflow size={18} /> },
   { to: '/findings', label: 'Findings', icon: <StickyNote size={18} /> },
+  { to: '/templates', label: 'Templates', icon: <BookMarked size={18} /> },
 ];
 
 export const SideNav: React.FC = () => {
@@ -38,14 +43,19 @@ export const SideNav: React.FC = () => {
   useEffect(() => {
     try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch {}
   }, [collapsed]);
+  // Force matte vibe by default; no user toggle
+  useEffect(() => {
+    document.body.classList.remove('vibe-glass');
+    document.body.classList.add('vibe-matte');
+  }, []);
 
   return (
     <aside className={cn('sidenav', collapsed && 'collapsed')}>
       {/* header */}
       {collapsed ? (
         <div className="nav-section items-center">
-          <div className="flex flex-col items-center gap-2 pt-1">
-            <span role="img" aria-label="logo" className="text-xl">😊</span>
+          <div className="flex flex-col items-center gap-2 pt-2">
+            <img src={logoPng} alt="FlowLedger" className="w-9 h-9 rounded" />
             <button
               className="collapse-btn"
               aria-label="Expand sidebar"
@@ -61,7 +71,7 @@ export const SideNav: React.FC = () => {
           <div className={cn('logo-row', 'flex items-center justify-between pl-2')}
                aria-label="Brand">
             <span className="inline-flex items-center gap-2">
-              <span role="img" aria-label="logo" className="text-xl">😊</span>
+              <img src={logoPng} alt="FlowLedger" className="w-8 h-8 rounded" />
               <span className="font-semibold">FlowLedger</span>
             </span>
             <button
@@ -78,24 +88,13 @@ export const SideNav: React.FC = () => {
 
       {/* primary nav */}
       {collapsed ? (
-        <Tooltip.Provider delayDuration={400} skipDelayDuration={200}>
-          <nav aria-label="Primary" className="nav-section items-center">
-            {links.map((l) => (
-              <Tooltip.Root key={l.to}>
-                <Tooltip.Trigger asChild>
-                  <NavLink to={l.to} className={({ isActive }) => cn('icon-btn', isActive && 'active')}>
-                    {l.icon}
-                  </NavLink>
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Content className="popover px-2 py-1 text-xs" side="right" sideOffset={8}>
-                    {l.label}
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-            ))}
-          </nav>
-        </Tooltip.Provider>
+        <nav aria-label="Primary" className="nav-section items-center">
+          {links.map((l) => (
+            <NavLink key={l.to} to={l.to} title={l.label} className={({ isActive }) => cn('icon-btn', isActive && 'active')}>
+              {l.icon}
+            </NavLink>
+          ))}
+        </nav>
       ) : (
         <nav aria-label="Primary" className="nav-section">
           {links.map((link) => (
@@ -105,7 +104,7 @@ export const SideNav: React.FC = () => {
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 px-3 py-2 rounded-lg',
-                  isActive ? 'active bg-[rgba(255,255,255,0.03)] text-white font-semibold' : 'text-[#f5f6f7]'
+                  isActive ? 'active font-semibold' : 'text-[#555]'
                 )
               }
             >

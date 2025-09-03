@@ -1,48 +1,59 @@
 import * as React from 'react';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { cn } from './utils.js';
-import { Button } from './button.js';
+import Modal from '../components/Modal.tsx';
 
-export const Dialog = DialogPrimitive.Root;
-export const DialogTrigger = DialogPrimitive.Trigger;
-export const DialogClose = DialogPrimitive.Close;
+export function Dialog({ open, onOpenChange, children, className }: { open?: boolean; onOpenChange?: (v:boolean)=>void; children?: React.ReactNode; className?:string }) {
+  if (!open) return null;
+  // Attempt to read a title string from children if a DialogHeader was provided
+  let title: React.ReactNode | undefined = undefined;
+  React.Children.forEach(children, child => {
+    // crude extraction: if child is an element with props.title use it
+    if (React.isValidElement(child) && (child as any).props && (child as any).props.children) {
+      const inner = (child as any).props.children;
+      if (React.isValidElement(inner) && (inner as any).props && (inner as any).props.title) {
+        title = (inner as any).props.title;
+      }
+    }
+  });
 
-export function DialogContent({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>) {
   return (
-    <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
-      <DialogPrimitive.Content
-        className={cn(
-          'fixed z-50 w-full max-w-2xl rounded-2xl border border-white/10 bg-[var(--surface-2)] text-[var(--text-1)] shadow-[0_28px_80px_rgba(0,0,0,0.65)] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 focus:outline-none',
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </DialogPrimitive.Content>
-    </DialogPrimitive.Portal>
+    <Modal title={typeof title === 'string' ? title : undefined} onClose={() => onOpenChange?.(false)} className={className} closeOnBackdrop={false}>
+      {children}
+    </Modal>
   );
 }
 
-export function DialogHeader({ title, description, onClose }: { title: string; description?: string; onClose?: () => void }) {
+export const DialogTrigger = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
+
+export const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ children, className, ...props }, ref) => (
+  <div ref={ref} className={className} {...props}>{children}</div>
+));
+DialogContent.displayName = 'DialogContent';
+
+export function DialogHeader({ title, subtitle, className }: { title?: React.ReactNode; subtitle?: React.ReactNode; className?: string }) {
   return (
-    <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[var(--surface-2)]/95 backdrop-blur rounded-t-2xl">
-      <div>
-        <DialogPrimitive.Title className="font-semibold tracking-tight">{title}</DialogPrimitive.Title>
-        {description && <DialogPrimitive.Description className="text-sm text-[var(--text-2)] mt-0.5">{description}</DialogPrimitive.Description>}
+    <div className={className}>
+      <div className="flex items-start justify-between gap-3 px-6 py-4">
+        <div>
+          {title && <div className="text-lg font-semibold">{title}</div>}
+          {subtitle && <div className="text-sm text-[var(--text-2)]">{subtitle}</div>}
+        </div>
       </div>
-      <DialogPrimitive.Close asChild>
-        <Button variant="ghost" size="sm" aria-label="Close">Close</Button>
-      </DialogPrimitive.Close>
     </div>
   );
 }
 
-export function DialogBody({ children }: { children: React.ReactNode }) {
-  return <div className="px-6 py-5 max-h-[70vh] overflow-auto">{children}</div>;
-}
+export const DialogBody = ({ children, className }: { children?: React.ReactNode; className?: string }) => (
+  <div className={className}>{children}</div>
+);
 
-export function DialogFooter({ children }: { children: React.ReactNode }) {
-  return <div className="modal-footer bg-[var(--surface-2)]/95 backdrop-blur">{children}</div>;
-}
+export const DialogFooter = ({ children, className }: { children?: React.ReactNode; className?: string }) => (
+  <div className={className}>{children}</div>
+);
+
+export const DialogClose = ({ onClick }: { onClick?: ()=>void }) => (
+  <button aria-label="close" className="icon-btn" onClick={onClick}>✕</button>
+);
+
+export default Dialog;
+
 

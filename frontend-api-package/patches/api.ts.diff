@@ -1,0 +1,15 @@
+*** Begin Patch
+*** Update File: api.ts
+@@
+ export async function createClientViaProcedure(data: {
+   Name: string;
+   IsActive?: boolean;
+   PackCode?: string | null;
+   PrimaryContactId?: number | null;
+   OwnerUserId?: number | null;
+ }) {
+   const response = await api.post('/clients/create-proc', data);
+-  return response.data;
++  return response.data.data;
+ }
+*** End Patch

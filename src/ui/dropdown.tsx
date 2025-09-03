@@ -1,20 +1,31 @@
 import * as React from 'react';
-import * as Dropdown from '@radix-ui/react-dropdown-menu';
 import { cn } from './utils.js';
+import { Menu, MenuTrigger, MenuContent, MenuItem } from './popover.js';
 
-export const DropdownMenu = Dropdown.Root;
-export const DropdownTrigger = Dropdown.Trigger;
-export const DropdownPortal = Dropdown.Portal;
+// Compatibility wrapper: keep the old Dropdown API but implement it using the new Menu primitives.
+// This allows existing files to keep importing DropdownMenu/DropdownTrigger/DropdownContent/DropdownItem
+// without changes while the underlying implementation is consistent.
 
-export function DropdownContent({ className, ...props }: React.ComponentPropsWithoutRef<typeof Dropdown.Content>) {
-  return (
-    <Dropdown.Portal>
-      <Dropdown.Content className={cn('popover p-1', className)} align="end" sideOffset={6} {...props} />
-    </Dropdown.Portal>
-  );
+export const DropdownMenu: React.FC<React.PropsWithChildren> = ({ children }) => {
+  // Render children as-is under Menu root — callers expect to pass DropdownTrigger and DropdownContent
+  // inside this container; we just render a Menu.Root-equivalent using Menu as a wrapper.
+  return <Menu>{children}</Menu>;
+};
+
+export const DropdownTrigger: React.FC<React.PropsWithChildren<{ asChild?: boolean; disabled?: boolean }>> = ({ children }) => {
+  // Translate DropdownTrigger -> MenuTrigger
+  return <MenuTrigger asChild>{children as React.ReactNode}</MenuTrigger>;
+};
+
+export function DropdownContent({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode }) {
+  return <MenuContent className={cn(String(className || ''), '')} {...(props as any)}>{children}</MenuContent>;
 }
 
-export function DropdownItem({ className, inset, ...props }: React.ComponentPropsWithoutRef<typeof Dropdown.Item> & { inset?: boolean }) {
-  return <Dropdown.Item className={cn('item', inset && 'pl-8', className)} {...props} />;
+export function DropdownItem({ className, inset, children, onSelect, disabled, ...props }: React.HTMLAttributes<HTMLDivElement> & { inset?: boolean; onSelect?: () => void; disabled?: boolean; children?: React.ReactNode }) {
+  return (
+    <MenuItem onSelect={onSelect} disabled={disabled} className={cn(String(className || ''), inset ? 'pl-8' : '')} {...(props as any)}>
+      {children}
+    </MenuItem>
+  );
 }
 

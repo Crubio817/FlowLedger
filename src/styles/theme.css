@@ -17,6 +17,8 @@
   /* Legacy accent tokens retained (may be remapped) */
   --blue-900: #0F172A;
   --blue-800: #111827;
+  /* Brand accent */
+  --accent-brand: #4997D0;
   /* Raiders-inspired neutrals */
   --silver-100: #f5f6f7;
   --silver-150: #eceeef;
@@ -45,14 +47,14 @@
 /* Dark app theme inspired dashboard */
 body.theme-dark {
   --surface-0: #0b0c0d; /* page */
-  --surface-1: #111214; /* nav */
+  --surface-1: #161716; /* nav (updated to requested #161716) */
   --surface-2: #181a1c; /* card */
   --surface-3: #202225; /* hover */
   --border-subtle: #2a2c2f;
   --border-strong: #34363a;
   --text-1: #f5f6f7;
   --text-2: #9ba0a6;
-  --accent-active: var(--accent-lime);
+  --accent-active: var(--accent-brand);
   background: var(--surface-0);
   color: var(--text-1);
   font-feature-settings: "ss01" on, "cv02" on;
@@ -70,7 +72,7 @@ body.theme-light {
   --border-strong: var(--silver-400);
   --text-1: #181a1c;
   --text-2: #5d6166;
-  --accent-active: var(--silver-800);
+  --accent-active: var(--accent-brand);
   background: var(--surface-0);
   color: var(--text-1);
 }
@@ -80,9 +82,9 @@ body.theme-light.accent-lime { --accent-active: var(--accent-lime); }
 
 /* Side navigation */
 .sidenav {
-  width: 240px;
-  /* default to deep matte black */
-  background: var(--black-matte);
+  width: 280px;
+  /* use the theme nav surface color */
+  background: var(--surface-1);
   border-right: 1px solid rgba(0,0,0,0.18);
   display: flex;
   flex-direction: column;
@@ -92,23 +94,24 @@ body.theme-light.accent-lime { --accent-active: var(--accent-lime); }
   position: relative; /* anchor floating controls and pseudo elements */
   min-height: 100vh; height: 100vh;
 }
-.sidenav.collapsed { width: 48px; }
+.sidenav.collapsed { width: 80px; }
 .sidenav.collapsed .logo-row span:last-child,
 .sidenav.collapsed a span.label-text,
 .sidenav.collapsed .footer-text { display:none; }
-.sidenav a svg { flex-shrink:0; opacity:.98; width:18px; height:18px; }
+.sidenav a svg { flex-shrink:0; opacity:.98; width:24px; height:24px; }
 .sidenav a { line-height:1.1; }
-.sidenav.collapsed a { justify-content:center; padding: .35rem 0; }
+.sidenav.collapsed a { justify-content:center; padding: .5rem 0; }
 .collapse-btn {
   width: 36px;
   height: 36px;
   padding: 4px;
   display:inline-flex; align-items:center; justify-content:center;
-  border-radius:6px; /* small rounded rect */
-  background: transparent; border: none; box-shadow: none;
-  color: rgba(0,0,0,0.6); cursor: pointer;
+  border-radius:9999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #f5f6f7; cursor: pointer;
 }
-.collapse-btn:hover { background: rgba(0,0,0,0.04); }
+.collapse-btn:hover { background: rgba(255,255,255,0.10); }
 .sidenav.collapsed .collapse-btn { width: 36px; height: 36px; }
 .sidenav.collapsed .collapse-btn span { display: inline-flex; }
 
@@ -118,34 +121,37 @@ body.theme-light.accent-lime { --accent-active: var(--accent-lime); }
 .sidenav.collapsed .footer-bar .meta { display: none; }
 
 /* slim rail: compact icon-only collapsed state */
-.sidenav.collapsed a svg { width:22px; height:22px; padding:6px; border-radius:10px; background: transparent; display:inline-grid; place-items:center; transition: background .12s, transform .12s; }
+.sidenav.collapsed a svg { width:24px; height:24px; transition: transform .12s; }
 .sidenav.collapsed a.active { background: transparent; }
-.sidenav.collapsed a.active svg { background: rgba(255,255,255,0.07); }
-.sidenav.collapsed a:hover svg { background: rgba(255,255,255,0.03); transform: translateX(2px); }
-body.theme-dark .sidenav.collapsed a:hover svg { background: rgba(255,255,255,0.04); }
+.sidenav.collapsed a.active svg { background: transparent; }
+.sidenav.collapsed a:hover svg { transform: translateX(2px); }
+body.theme-dark .sidenav.collapsed a:hover svg { background: rgba(255,255,255,0.08); }
 
 /* reduce spacing in collapsed mode */
-.sidenav.collapsed .nav-section { gap: 8px; padding: .5rem 0; }
+.sidenav.collapsed .nav-section { gap: 12px; padding: .75rem 0; }
 
 /* visually pull button out of nav so it floats on the edge */
 .sidenav .nav-section > .collapse-btn { margin-right: 0; margin-left: 0; }
-.icon-btn { background: transparent; border: none; padding: 6px; display:inline-flex; align-items:center; justify-content:center; color: inherit; border-radius:6px; cursor:pointer; }
-.icon-btn:hover { background: rgba(0,0,0,0.06); }
+.icon-btn { width:46px; height:46px; background: transparent; border: none; padding: 0; display:inline-flex; align-items:center; justify-content:center; color: #555; border-radius:9999px; cursor:pointer; }
+.icon-btn:hover { background: rgba(255,255,255,0.06); color: #AAA; }
+.icon-btn.active { background: transparent; color: var(--accent-active); }
+.icon-btn.active svg { color: inherit; }
 .sidenav .meta { margin-top:auto; padding:0 .5rem; }
 .sidenav .nav-section { padding: 0 0.5rem; display: flex; flex-direction: column; gap: 8px; }
 .sidenav .nav-heading { font-size: 11px; text-transform: uppercase; color: rgba(0,0,0,0.6); padding: .25rem .75rem; letter-spacing: .6px; }
 .sidenav .nav-section + .nav-section { border-top: 1px solid rgba(0,0,0,0.06); padding-top: .6rem; }
-.sidenav a { display:flex; align-items:center; gap:.75rem; font-size:13px; font-weight:600; padding:.6rem .75rem; border-radius:8px; color: #f5f6f7; position:relative; transition: background-color .18s, color .18s; }
+.sidenav a { display:flex; align-items:center; gap:.8rem; font-size:15px; font-weight:600; padding:.8rem .9rem; border-radius:12px; color: #555; position:relative; transition: background-color .18s, color .18s, box-shadow .18s; }
 /* theme-specific corrections: ensure sidenav is readable in dark mode */
 /* Keep sidenav text black for strong readability like the provided screenshot */
-.sidenav a:hover { background: rgba(255,255,255,0.02); color: #fff; }
-.sidenav a.active { background: rgba(255,255,255,0.03); color: #fff; box-shadow: inset 3px 0 0 0 var(--accent-active); }
+.sidenav a:hover { background: #1E1E1E; color: #AAA; }
+.sidenav a.active { background: transparent; color: var(--accent-active); box-shadow: inset 3px 0 0 0 var(--accent-active); }
+.sidenav a:focus-visible { outline: 0; box-shadow: 0 0 0 2px var(--accent-active); }
 /* keep existing light theme behavior but make explicit */
 /* Ensure light-theme class still renders the same (we removed light mode control) */
 body.theme-light .sidenav { background: var(--raiders-silver); color: #0b0b0b; }
-body.theme-light .sidenav a { color: #0b0b0b; }
-body.theme-light .sidenav a:hover { background: rgba(0,0,0,0.06); color: #000; }
-body.theme-light .sidenav a.active { background: rgba(0,0,0,0.16); color: #fff; box-shadow: inset 3px 0 0 0 var(--accent-active); }
+body.theme-light .sidenav a { color: #555; }
+body.theme-light .sidenav a:hover { background: rgba(0,0,0,0.06); color: #888; }
+body.theme-light .sidenav a.active { background: rgba(0,0,0,0.02); color: var(--accent-active); box-shadow: inset 3px 0 0 0 var(--accent-active); }
 
 /* Accent interactive */
 button.accent, .accent-btn {
@@ -173,13 +179,34 @@ body.theme-light .accent-btn { color: #fff; }
 /* Scroll area tweak */
 .app-shell { display:flex; min-height:100vh; background: var(--surface-0); }
 .workspace { flex:1; display:flex; flex-direction:column; position: relative; }
+/* Subtle backlight behind the main workspace to add depth on wide screens.
+   Display only in dark theme to avoid washing out light-themed surfaces. It's
+   non-interactive (pointer-events:none) and sized large with heavy blur so it
+   reads as environmental lighting rather than a UI element. */
+body.theme-dark .workspace::before {
+  content: "";
+  position: absolute;
+  right: 6%;
+  top: 6%;
+  width: 60rem;
+  height: 40rem;
+  background: radial-gradient(closest-side, rgba(73,151,208,0.09), rgba(73,151,208,0.02) 40%, transparent 60%);
+  filter: blur(80px) saturate(1.05);
+  transform: translateZ(0);
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: screen;
+}
+/* Make sure the workspace content stays above the background glow */
+.workspace > * { position: relative; z-index: 1; }
 
 /* Dark-mode elevation: give the left nav a subtle shadow to the right so it reads as elevated,
    and add a faint left-edge highlight on the workspace to emphasize separation. */
 body.theme-dark .sidenav {
   /* no glow/shadow: keep flat matte look */
   box-shadow: none;
-  z-index: 60; /* keep above workspace overlays if needed */
+  /* lower the sidenav stacking so overlays (modals/popovers) are above it */
+  z-index: 10;
   position: relative;
 }
 body.theme-dark .workspace::before {
@@ -199,18 +226,26 @@ body.theme-dark .workspace::before {
 body.theme-dark .sidenav::after { background: rgba(255,255,255,0.02); }
 
 /* Divider line between sidenav and workspace - matte vs glass vibes */
+/* dual-line divider for clearer separation on dark matte */
+.sidenav::before {
+  content: "";
+  position: absolute;
+  top: 0; right: -1px; bottom: 0;
+  width: 1px;
+  pointer-events: none;
+  background: rgba(0,0,0,0.75); /* subtle dark edge into workspace */
+  opacity: .55;
+  z-index: 9;
+}
 .sidenav::after {
-  /* flat divider: 1px solid line, no glow */
   content: "";
   position: absolute;
   top: 0; right: 0; bottom: 0;
   width: 1px;
   pointer-events: none;
-  background: rgba(255,255,255,0.02);
-  box-shadow: none;
-  filter: none;
-  transition: none;
-  z-index: 70;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+  box-shadow: 0 0 10px rgba(255,255,255,0.04);
+  z-index: 10;
 }
 
 /* rail-pulse animation removed to disable sidebar glow */
@@ -230,24 +265,24 @@ body.vibe-matte .workspace { background: #070707; }
 body.vibe-matte .sidenav::after { background: rgba(255,255,255,0.015); width: 1px; box-shadow: none; }
 
 /* No workspace gradient: keep flat background for clarity per request */
-.workspace-main { flex:1; padding: 1.75rem 2rem 3rem; max-width: 1600px; width:100%; margin:0 auto; }
+.workspace-main { flex:1; padding: 1.75rem 2rem 3rem; max-width: 1920px; width:100%; margin:0 auto; }
+@media (min-width: 2200px) {
+  .workspace-main { max-width: 2200px; }
+}
 
 /* Panel and utility styles */
 .panel { @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-soft relative; }
 .panel::before {
+  /* simplified: use a subtle inset stroke instead of a mask/xor composite which
+     can create circular/magnifier effects in some browsers. This keeps the
+     decorative inner stroke but avoids complex mask rendering. */
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02));
-  mask:
-    linear-gradient(#000, #000) content-box,
-    linear-gradient(#000, #000);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  padding: 1px; /* inner stroke */
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
 }
 .panel.neon {
   box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 24px rgba(127,132,135,0.25);
@@ -285,10 +320,7 @@ body.accent-amber {
   --accent-mint: var(--accent-amber);
 }
 
-.focus-ring:focus-visible {
-  outline: 2px solid var(--accent-mint);
-  outline-offset: 2px;
-}
+/* focus-ring utility removed — use standard :focus-visible rules where needed */
 
 /* Modal footer and CTA styles */
 .modal-footer {
@@ -335,6 +367,63 @@ body.accent-amber {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23n)" opacity="0.06"/></svg>');
   background-size: 300px 300px;
 }
+
+/* --- Glow and sweep effects --- */
+/* Card Halo: subtle radial accent behind cards (dark theme only) */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: -18px -24px -18px -24px;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 14px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent-active) 10%, transparent 90%), transparent 60%);
+  filter: blur(28px) saturate(1.05);
+  opacity: 0.9;
+}
+/* Ensure card content sits above halo */
+.card > * { position: relative; z-index: 1; }
+
+/* Remove card halo entirely to keep a flatter look */
+.card::before { display: none !important; }
+
+/* Row Hover Glow - faint ambient glow when hovering a row */
+.table-modern tbody tr { transition: box-shadow .18s ease, transform .08s ease; }
+.table-modern tbody tr:hover { box-shadow: none !important; transform: none !important; }
+
+/* Icon Hover Glow - neon glow around small icon buttons */
+.icon-btn-sm:hover, .icon-btn:hover { box-shadow: none !important; transform: none !important; }
+
+/* Animated Border Sweep for primary CTA */
+.glow-cta { position: relative; overflow: hidden; }
+.glow-cta::before {
+  content: "";
+  position: absolute;
+  left: -120%; top: -2%; bottom: -2%; width: 40%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, color-mix(in srgb, var(--accent-active) 30%, rgba(255,255,255,0.06)) 50%, rgba(255,255,255,0.02) 100%);
+  transform: skewX(-18deg);
+  transition: transform .6s ease, opacity .6s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+.glow-cta:hover::before { transform: translateX(320%) skewX(-18deg); opacity: 1; }
+
+/* Optional pulsing glow for attention (not enabled by default). Use .glow-pulse to enable */
+.glow-pulse { box-shadow: 0 6px 22px color-mix(in srgb, var(--accent-active) 16%, transparent 84%); animation: pulseGlow 2.8s infinite ease-in-out; }
+@keyframes pulseGlow {
+  0% { box-shadow: 0 6px 16px color-mix(in srgb, var(--accent-active) 8%, transparent 92%); }
+  50% { box-shadow: 0 12px 36px color-mix(in srgb, var(--accent-active) 18%, transparent 82%); }
+  100% { box-shadow: 0 6px 16px color-mix(in srgb, var(--accent-active) 8%, transparent 92%); }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .glow-cta::before, .glow-pulse { transition: none !important; animation: none !important; }
+  .table-modern tbody tr:hover { transform: none; box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-active) 4%, transparent 96%); }
+  .icon-btn-sm:hover, .icon-btn:hover { transform: none; }
+}
+
+/* modal-green-glow removed — neon rim not desired */
 
 /* Form primitives */
 .section-title {
@@ -385,6 +474,14 @@ body.accent-amber {
 /* Search input variant */
 .input-search { padding-top:.5rem; padding-bottom:.5rem; border-radius: 9999px; }
 
+/* Remove focus glow for search inputs specifically so they don't show a bright ring */
+.input-search:focus, .input-search:focus-visible {
+  outline: none;
+  box-shadow: none !important;
+  /* keep a subtle neutral border on focus */
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
 /* Table: modern look */
 .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
 .table-modern thead th {
@@ -419,17 +516,41 @@ body.accent-amber {
 .th-sortable.active .caret { opacity: 1; }
 .th-sortable.asc .caret { transform: rotate(180deg); }
 
-.badge { display:inline-flex; align-items:center; gap:.25rem; padding:.15rem .45rem; border-radius:9999px; font-size:11px; font-weight:600; }
+.badge { display:inline-flex; align-items:center; gap:.25rem; padding:.15rem .45rem; border-radius:9999px; font-size:11px; font-weight:600; border: 1px solid rgba(255,255,255,0.08); transition: color .15s, border-color .15s; }
 .badge-soft { background: var(--surface-3); color: var(--text-1); }
 .badge-emerald { background: rgba(16,185,129,0.15); color: #34d399; }
 .badge-muted { background: var(--surface-4); color: var(--text-2); }
+.badge:hover { color: var(--accent-active); border-color: var(--accent-active); }
 
 .avatar { width:24px; height:24px; border-radius:9999px; display:inline-grid; place-items:center; font-size:11px; font-weight:700; color:#000; background: var(--accent-active); }
-.chip { border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); border-radius:9999px; padding:.15rem .5rem; font-size:11px; color: var(--text-2); }
+.chip { cursor: pointer; user-select: none; border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); border-radius:9999px; padding:.15rem .5rem; font-size:11px; color: var(--text-2); transition: background .12s, color .12s, transform .06s; }
+.chip:hover { background: rgba(255,255,255,0.06); color: var(--text-1); transform: translateY(-1px); }
+.chip:hover { transform: none !important; }
+/* Selected tag state */
+.chip.selected { background: color-mix(in srgb, var(--accent-active) 14%, transparent 86%); border-color: color-mix(in srgb, var(--accent-active) 30%, transparent 70%); color: var(--text-1); font-weight:700; }
+/* focus behavior: only show visible ring for keyboard users */
+.chip:focus { outline: none; }
+.chip:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-active) 20%, transparent); }
 
 /* Icon buttons & popover */
 .icon-btn-sm { width:28px; height:28px; border-radius:9999px; display:inline-grid; place-items:center; border:1px solid rgba(255,255,255,0.08); background: var(--surface-3); color: var(--text-1); }
 .icon-btn-sm:hover { background: rgba(255,255,255,0.08); }
-.popover { position:absolute; z-index:40; min-width: 240px; border:1px solid rgba(255,255,255,0.08); background: var(--surface-2); border-radius:12px; box-shadow: 0 16px 40px rgba(0,0,0,.35); overflow:hidden; }
+.popover { position:absolute; z-index:40; min-width: 200px; border:1px solid rgba(255,255,255,0.08); background: var(--surface-2); border-radius:12px; box-shadow: 0 16px 40px rgba(0,0,0,.35); overflow:hidden; max-width: 360px; max-height: 60vh; width: auto; box-sizing: border-box; }
+.popover { overflow:auto; }
+.popover, .popover * { min-width: 0; }
+.popover { white-space: normal; word-break: break-word; }
+.popover input, .popover .item { max-width: 100%; box-sizing: border-box; }
 .popover .item { display:flex; align-items:center; gap:.5rem; padding:.5rem .75rem; cursor:pointer; }
 .popover .item:hover { background: rgba(255,255,255,0.04); }
+
+/* Global links / CTAs */
+a { color: var(--accent-active); }
+a:hover { text-decoration: underline; }
+
+/* Hide developer focus vignette toggle chip if present in the UI.
+   This keeps the underlying feature code intact but removes the control
+   from the visible UI per product request. */
+button.chip[title="Toggle focus vignette"],
+.chip[title="Toggle focus vignette"] {
+  display: none !important;
+}

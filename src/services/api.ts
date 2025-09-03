@@ -30,6 +30,8 @@ function withErrors<T>(fn: () => Promise<T>, errMsg = 'Request failed'): Promise
           const raw = e.message;
           try {
             const parsed = JSON.parse(raw);
+            // attach parsed body to error for callers
+            e.parsed = parsed;
             if (parsed?.error?.message) msg = String(parsed.error.message);
             else if (parsed?.message) msg = String(parsed.message);
             else msg = raw;
@@ -40,6 +42,13 @@ function withErrors<T>(fn: () => Promise<T>, errMsg = 'Request failed'): Promise
             // not JSON
             msg = String(e.message || errMsg);
           }
+          // Detect common SQL Server error text for missing column and provide an actionable hint
+          try {
+            const m = /invalid column name '?"?([a-zA-Z0-9_]+)"?'?/i.exec(msg || '');
+            if (m && m[1]) {
+              msg = `Backend schema error: missing column '${m[1]}'. Ask the backend team to adjust the query or add a migration.`;
+            }
+          } catch {}
           // for HTTP 5xx provide a compact message
           if (e.code >= 500 && !msg) msg = `Server error (${e.code})`;
         } else if (e?.message && typeof e.message === 'string') {
@@ -47,6 +56,7 @@ function withErrors<T>(fn: () => Promise<T>, errMsg = 'Request failed'): Promise
           const raw = e.message;
           try {
             const parsed = JSON.parse(raw);
+            e.parsed = parsed;
             if (parsed?.error?.message) msg = String(parsed.error.message);
             else if (parsed?.message) msg = String(parsed.message);
             else msg = raw;
@@ -66,8 +76,9 @@ function withErrors<T>(fn: () => Promise<T>, errMsg = 'Request failed'): Promise
 
     // Show a friendly toast
     toast.error(msg);
-    // rethrow so callers can inspect and handle
-    throw e;
+  // attach normalized message for callers and rethrow so callers can inspect and handle
+  e.normalizedMessage = msg;
+  throw e;
   });
 }
 
@@ -182,7 +193,7 @@ export async function listClients(page = 1, limit = 20, sort = 'name', order: 'a
 }
 
 // Create client (spec snapshot currently lacks POST /clients; backend supports it)
-export async function createClient(name: string, is_active = true, primaryContactId: number | null = null): Promise<any> {
+export async function createClient(name: string, is_active = true, primaryContactId: number | null = null, pack: string | number | null = null, extras?: Record<string, any>): Promise<any> {
   // Use stored procedure endpoint - include PrimaryContactId (backend expects the field present)
   const payload: Record<string, any> = {
     Name: name,
@@ -192,11 +203,24 @@ export async function createClient(name: string, is_active = true, primaryContac
     primaryContactId: primaryContactId,
     primary_contact_id: primaryContactId,
     // helpful defaults which backend may accept
-  PlaybookCode: 'DEFAULT',
-  playbookCode: 'DEFAULT',
-  playbook_code: 'DEFAULT',
+  // Playbook/Pack code defaults. If the caller provided a string code use that for playbook; otherwise default to 'DEFAULT'
+  PlaybookCode: typeof pack === 'string' ? pack : 'DEFAULT',
+  playbookCode: typeof pack === 'string' ? pack : 'DEFAULT',
+  playbook_code: typeof pack === 'string' ? pack : 'DEFAULT',
+  // PackCode always present as string; if caller passed numeric pack id we'll stringify it
+  PackCode: pack !== null && pack !== undefined ? String(pack) : 'DEFAULT',
+  packCode: pack !== null && pack !== undefined ? String(pack) : 'DEFAULT',
+  pack_code: pack !== null && pack !== undefined ? String(pack) : 'DEFAULT',
+  // Also provide PackId variants when numeric id is provided
+  ...(typeof pack === 'number' ? { PackId: pack, packId: pack, pack_id: pack } : {}),
   OwnerUserId: null,
   };
+
+  // Merge any additional nested arrays or fields the caller wants to include
+  if (extras && typeof extras === 'object') {
+    // shallow merge - extras may include arrays like client_contacts, notes, locations, client_industries
+    Object.assign(payload, extras);
+  }
 
   // Defensive: some backend deployments expect slightly different payload shapes or
   // may not accept null for PrimaryContactId. Try the straightforward call first,
@@ -234,6 +258,101 @@ export async function listAudits(page = 1, limit = 20, sort = 'created_utc', ord
   Promise<{ data: Audit[]; meta?: PageMeta }> {
   const q = new URLSearchParams({ page: String(page), limit: String(limit), sort, order });
   return withErrors(() => http.get(`/audits?${q}`), 'Failed to load audits');
+}
+
+// Path templates (audit types)
+export type PathTemplate = { path_id: number; name: string; description?: string; version?: string; active?: boolean };
+export async function listPathTemplates(page = 1, limit = 200): Promise<{ data: PathTemplate[]; meta?: PageMeta }> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return withErrors(() => http.get(`/path-templates?${q.toString()}`), 'Failed to load path templates');
+}
+
+// Task packs (optional feature on some backends)
+export type TaskPack = { pack_id?: number; pack_code?: string; pack_name?: string; description?: string };
+export async function listTaskPacks(page = 1, limit = 200): Promise<ApiEnvelope<TaskPack[]>> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return withErrors(() => http.get<ApiEnvelope<TaskPack[]>>(`/task-packs?${q.toString()}`), 'Failed to load task packs');
+}
+
+export async function getPathTemplate(pathId: number): Promise<PathTemplate> {
+  return withErrors(() => http.get(`/path-templates/${pathId}`), 'Failed to load template');
+}
+
+// New path template management endpoints
+export async function publishPathTemplate(pathId: number, new_version: string): Promise<PathTemplate> {
+  return withErrors(() => http.post(`/path-templates/${pathId}/publish`, { new_version }), 'Publish template failed');
+}
+
+export async function clonePathTemplate(pathId: number): Promise<PathTemplate> {
+  return withErrors(() => http.post(`/path-templates/${pathId}/clone`), 'Clone template failed');
+}
+
+export type PathStep = { step_id: number; path_id: number; seq: number; title: string; state_gate?: string; required?: boolean; agent_key?: string; input_contract?: any; output_contract?: any };
+export async function listPathSteps(pathId: number, page = 1, limit = 500): Promise<{ data: PathStep[]; meta?: PageMeta }> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit), path_id: String(pathId) });
+  return withErrors(() => http.get(`/path-steps?${q.toString()}`), 'Failed to load path steps');
+}
+
+export async function reorderPathSteps(pathId: number, order: number[]): Promise<PathStep[]> {
+  return withErrors(() => http.put('/path-steps/reorder', { path_id: pathId, order }), 'Reorder steps failed');
+}
+
+export async function getPathTemplateUsage(pathId: number): Promise<{ audit_count: number; audits: any[] }> {
+  return withErrors(() => http.get(`/path-templates/${pathId}/usage`), 'Failed to load template usage');
+}
+
+// Path step CRUD
+export async function createPathStep(pathId: number, payload: Partial<PathStep>): Promise<PathStep> {
+  const body = { ...payload, path_id: pathId };
+  return withErrors(() => http.post('/path-steps', body), 'Create step failed');
+}
+
+export async function updatePathStep(stepId: number, payload: Partial<PathStep>): Promise<PathStep> {
+  return withErrors(() => http.put(`/path-steps/${stepId}`, payload), 'Update step failed');
+}
+
+export async function deletePathStep(stepId: number): Promise<{ ok: true }> {
+  return withErrors(() => http.del(`/path-steps/${stepId}`), 'Delete step failed');
+}
+
+// Template meta update
+export async function updatePathTemplate(pathId: number, payload: { name?: string; description?: string; domain_tags?: string[]; notes?: string }): Promise<PathTemplate> {
+  return withErrors(() => http.put(`/path-templates/${pathId}`, payload), 'Update template failed');
+}
+
+// Create audit
+export async function createAudit(payload: { engagement_id?: number; title: string; domain?: string | null; audit_type?: string | null; owner_contact_id?: number | null; path_id?: number; start_utc?: string | null; notes?: string | null }): Promise<any> {
+  return withErrors(() => http.post('/audits', payload), 'Create audit failed');
+}
+
+// Audit workspace endpoints
+export async function getAudit(auditId: number): Promise<any> {
+  return withErrors(() => http.get(`/audits/${auditId}`), 'Failed to load audit');
+}
+
+export async function putAuditPath(auditId: number, payload: { path_id: number }): Promise<any> {
+  return withErrors(() => http.put(`/audits/${auditId}/path`, payload), 'Failed to set audit path');
+}
+
+export async function postAuditProgress(auditId: number, payload: { step_id: number; status: string; output_json?: any; notes?: string | null }): Promise<any> {
+  return withErrors(() => http.post(`/audits/${auditId}/progress`, payload), 'Save progress failed');
+}
+
+export async function postAdvanceStep(auditId: number, payload: { step_id?: number; advance?: boolean }): Promise<any> {
+  return withErrors(() => http.post(`/audits/${auditId}/advance-step`, payload), 'Advance step failed');
+}
+
+export async function postAdvanceToStep(auditId: number, payload: { step_id: number }): Promise<any> {
+  return withErrors(() => http.post(`/audits/${auditId}/advance-to-step`, payload), 'Advance to step failed');
+}
+
+export async function postRecalcPercent(auditId: number): Promise<any> {
+  return withErrors(() => http.post(`/audits/${auditId}/recalc-percent`), 'Recalculate percent failed');
+}
+
+// Delete an audit
+export async function deleteAudit(auditId: number): Promise<{ deleted?: number } | any> {
+  return withErrors(() => http.del(`/audits/${auditId}`), 'Delete audit failed');
 }
 
 // Create a single engagement
@@ -316,6 +435,13 @@ export async function deleteClientTagMap(clientId: number, tagId: number): Promi
   return withErrors(() => http.del(`/client-tag-map?${q.toString()}`), 'Delete client->tag mapping failed');
 }
 
+export async function listClientTagMap(page = 1, limit = 200, engagementId?: number): Promise<{ data: { engagement_id: number; tag_id: number }[]; meta?: PageMeta }> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  // API may not accept engagement_id as filter; pass none and filter caller-side
+  const res = await withErrors(() => http.get(`/client-tag-map?${q.toString()}`), 'Failed to load tag mappings');
+  return res as any;
+}
+
 // Client tags management (list/create/update/delete)
 export type ClientTag = { tag_id: number; tag_name: string };
 
@@ -340,6 +466,60 @@ export async function getClientsOverview(limit = 50, query?: string): Promise<Ap
   const q = new URLSearchParams({ limit: String(limit) });
   if (query) q.set('q', String(query));
   return withErrors(() => http.get<ApiEnvelope<ClientsOverviewItem[]>>(`/clients-overview?${q.toString()}`), 'Failed to load clients overview');
+}
+
+// Client engagements types & CRUD (per OpenAPI)
+export type ClientEngagement = {
+  engagement_id?: number;
+  client_id: number;
+  title: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  status?: string | null;
+};
+
+export async function listClientEngagements(page = 1, limit = 50, clientId?: number): Promise<{ data: ClientEngagement[]; meta?: PageMeta }> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (clientId) q.set('client_id', String(clientId));
+  return withErrors(() => http.get(`/client-engagements?${q.toString()}`), 'Failed to load engagements');
+}
+
+export async function getClientEngagement(id: number): Promise<ClientEngagement> {
+  return withErrors(() => http.get(`/client-engagements/${id}`), 'Failed to load engagement');
+}
+
+export async function updateClientEngagement(id: number, payload: Partial<ClientEngagement>): Promise<ClientEngagement> {
+  return withErrors(() => http.put(`/client-engagements/${id}`, payload), 'Update engagement failed');
+}
+
+export async function deleteClientEngagement(id: number): Promise<{ deleted?: number }> {
+  return withErrors(() => http.del(`/client-engagements/${id}`), 'Delete engagement failed');
+}
+
+// Engagement tag mapping
+export async function createEngagementTagMap(engagementId: number, tagId: number): Promise<any> {
+  return withErrors(() => http.post('/client-tag-map', { engagement_id: engagementId, tag_id: tagId }), 'Create engagement->tag mapping failed');
+}
+export async function deleteEngagementTagMap(engagementId: number, tagId: number): Promise<any> {
+  const q = new URLSearchParams({ engagement_id: String(engagementId), tag_id: String(tagId) });
+  return withErrors(() => http.del(`/client-tag-map?${q.toString()}`), 'Delete engagement->tag mapping failed');
+}
+
+// Onboarding tasks
+export type OnboardingTask = { task_id?: number; client_id: number; title: string; due_date?: string | null; assignee_user_id?: number | null; status?: string | null; created_utc?: string; updated_utc?: string | null };
+export async function listOnboardingTasks(page = 1, limit = 20, clientId?: number): Promise<{ data: OnboardingTask[]; meta?: PageMeta }> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (clientId) q.set('client_id', String(clientId));
+  return withErrors(() => http.get(`/onboarding-tasks?${q.toString()}`), 'Failed to load onboarding tasks');
+}
+export async function createOnboardingTask(payload: { client_id: number; title: string; due_date?: string | null; assignee_user_id?: number | null; status?: string | null }): Promise<OnboardingTask> {
+  return withErrors(() => http.post('/onboarding-tasks', payload), 'Create onboarding task failed');
+}
+export async function updateOnboardingTask(id: number, payload: Partial<OnboardingTask>): Promise<OnboardingTask> {
+  return withErrors(() => http.put(`/onboarding-tasks/${id}`, payload), 'Update onboarding task failed');
+}
+export async function deleteOnboardingTask(id: number): Promise<{ deleted?: number }> {
+  return withErrors(() => http.del(`/onboarding-tasks/${id}`), 'Delete onboarding task failed');
 }
 
 // Client contacts types & CRUD
@@ -395,4 +575,16 @@ export async function deleteClientContact(id: number): Promise<{ deleted?: numbe
 // Post-creation client setup (idempotent orchestration on backend)
 export async function clientSetup(clientId: number, payload: { PrimaryContactId?: number | null; PlaybookCode?: string; OwnerUserId?: number | null }): Promise<any> {
   return withErrors(() => http.post(`/clients/${clientId}/setup`, payload), 'Client setup failed');
+}
+
+// Ensure stored-proc create aligns with success envelope { status: 'ok', data: ... }
+export async function createClientViaProcedure(payload: {
+  Name: string;
+  IsActive?: boolean;
+  PackCode?: string | null;
+  PrimaryContactId?: number | null;
+  OwnerUserId?: number | null;
+}): Promise<any> {
+  const res = await http.post<ApiEnvelope<any>>('/clients/create-proc', payload);
+  return (res as any)?.data ?? res;
 }
