@@ -6,6 +6,7 @@ import ClientsRoute from '../routes/clients.tsx';
 
 vi.mock('../services/api.ts', () => ({
   getClientsOverview: vi.fn(() => Promise.resolve({ data: [] })),
+  getDashboardStats: vi.fn(() => Promise.resolve({ active_clients: 0, audits_in_progress: 0, sipocs_completed: 0, pending_interviews: 0 })),
 }));
 
 describe('Clients route', () => {

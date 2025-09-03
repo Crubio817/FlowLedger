@@ -128,8 +128,14 @@ const ClientsAdvancedTable: React.FC = () => {
         const bVal = b[sortConfig.key!];
         
         let comparison = 0;
-        if (aVal < bVal) comparison = -1;
-        if (aVal > bVal) comparison = 1;
+        if (aVal != null && bVal != null) {
+          if (aVal < bVal) comparison = -1;
+          if (aVal > bVal) comparison = 1;
+        } else if (aVal == null && bVal != null) {
+          comparison = 1; // null values go to end
+        } else if (aVal != null && bVal == null) {
+          comparison = -1; // null values go to end
+        }
         
         return sortConfig.direction === 'desc' ? comparison * -1 : comparison;
       });
