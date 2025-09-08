@@ -893,6 +893,7 @@ export interface components {
             primary_contact_email?: string | null;
             /** @description Comma-delimited or JSON string of tags */
             tags?: string | null;
+            logo_url?: string | null;
             engagement_count?: number;
             pending_onboarding_tasks?: number;
             /** Format: date-time */

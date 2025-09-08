@@ -65,7 +65,7 @@ export default function ClientsEngagementsRoute() {
         </div>
       </div>
 
-      <div className="card p-6" style={{ background: '#181818' }}>
+      <div className="content-container p-6">
         {loading && <div className="text-sm text-[var(--text-2)]">Loading…</div>}
         {!loading && error && <div className="text-sm text-red-400">{error}</div>}
         {!loading && !error && (

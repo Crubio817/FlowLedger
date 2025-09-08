@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button.tsx';
 import { Input } from '../ui/input.tsx';
@@ -8,7 +8,43 @@ import { Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter } from '.
 import { getClientsOverview, listClientContacts, listAudits, listClientEngagements } from '../services/api.ts';
 import type { ClientsOverviewItem } from '../services/models.ts';
 import { formatUtc } from '../utils/date.ts';
-import { Users2, Briefcase, Tag, FileText, ArrowLeft, Search } from 'lucide-react';
+import { EnrichmentTab } from '../components/EnrichmentTab.tsx';
+import { OnboardingTasksTab } from '../components/OnboardingTasksTab.js';
+import { 
+  Users2, 
+  Briefcase, 
+  Tag, 
+  FileText, 
+  ArrowLeft, 
+  Search, 
+  Building2,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  TrendingUp,
+  Activity,
+  Plus,
+  Edit3,
+  ExternalLink,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Star,
+  Globe,
+  MessageSquare,
+  Settings,
+  MoreHorizontal,
+  PieChart,
+  BarChart3,
+  Zap,
+  Shield,
+  Target,
+  Award,
+  Eye,
+  Download,
+  Share2
+} from 'lucide-react';
 
 export default function ClientProfileRoute() {
   const params = useParams();
@@ -20,6 +56,8 @@ export default function ClientProfileRoute() {
   const [engagements, setEngagements] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showAllTags, setShowAllTags] = useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -54,147 +92,589 @@ export default function ClientProfileRoute() {
     .map(t => t.trim())
     .filter(Boolean);
 
-  return (
-    <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
+  // Calculate metrics
+  const completedAudits = audits.filter(a => a.percent_complete === 100).length;
+  const activeEngagements = engagements.filter(e => e.status === 'active').length;
+  const primaryContact = contacts.find(c => c.is_primary);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
         <div className="flex items-center gap-3">
-          <Button variant="minimal" onClick={()=>navigate('/clients')} title="Back to Clients"><ArrowLeft size={16} /></Button>
-          <div>
-            <h1 className="text-xl font-semibold">{client?.client_name || 'Client'}</h1>
-            <p className="text-sm text-[var(--text-2)]">Client profile and activity.</p>
-          </div>
-          {client && <Badge variant={client.is_active ? 'success' : 'muted'}>{client.is_active ? 'Active' : 'Inactive'}</Badge>}
+          <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-zinc-400">Loading client profile...</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <NavLink to={`/clients/engagements`} className="btn-pill btn-minimal inline-flex items-center gap-2">
-            <Briefcase size={16} /> Engagements
-          </NavLink>
-          <NavLink to={`/clients/${clientId}/documents`} className="btn-pill btn-minimal inline-flex items-center gap-2">
-            <FileText size={16} /> Documents
-          </NavLink>
+      </div>
+    );
+  }
+
+  if (err) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">Failed to load client</h2>
+          <p className="text-zinc-400 mb-4">{err}</p>
+          <Button onClick={() => navigate('/clients')} variant="primary">
+            <ArrowLeft size={16} className="mr-2" />
+            Back to Clients
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">{/* Consistent with other pages */}
+      {/* Hero Section */}
+      <div className="relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6">
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/clients')}
+              className="p-3 hover:bg-zinc-800/50 rounded-xl transition-all duration-200 group"
+            >
+              <ArrowLeft size={20} className="text-zinc-400 group-hover:text-white" />
+            </button>
+            
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center border border-cyan-500/20">
+                <Building2 className="text-cyan-400" size={28} />
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl font-bold text-white">{client?.client_name || 'Test Client'}</h1>
+                  <button className="p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-zinc-400 hover:text-white">
+                    <Star size={16} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-zinc-400">
+                  <div className="flex items-center gap-2">
+                    <Calendar size={14} />
+                    <span>Created {client?.created_utc ? formatUtc(client.created_utc) : 'Recently'}</span>
+                  </div>
+                  {client?.last_activity_utc && (
+                    <div className="flex items-center gap-2">
+                      <Activity size={14} />
+                      <span>Last active {formatUtc(client.last_activity_utc)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Tag size={14} />
+                    <span>ID: {client?.client_id}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Badge variant={client?.is_active ? 'success' : 'muted'} className="px-3 py-1">
+              {client?.is_active ? (
+                <>
+                  <CheckCircle2 size={14} className="mr-1" />
+                  Active
+                </>
+              ) : (
+                <>
+                  <Clock size={14} className="mr-1" />
+                  Inactive
+                </>
+              )}
+            </Badge>
+            
+            <div className="flex items-center gap-2">
+              <button className="p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-zinc-400 hover:text-white">
+                <Share2 size={16} />
+              </button>
+              <button className="p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-zinc-400 hover:text-white">
+                <Download size={16} />
+              </button>
+              <button className="p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-zinc-400 hover:text-white">
+                <MoreHorizontal size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Engagements</span>
+              <Briefcase className="text-cyan-400" size={16} />
+            </div>
+            <div className="text-2xl font-bold text-white">{engagements.length}</div>
+            <div className="text-xs text-emerald-400">{activeEngagements} active</div>
+          </div>
+          
+          <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Contacts</span>
+              <Users2 className="text-purple-400" size={16} />
+            </div>
+            <div className="text-2xl font-bold text-white">{contacts.length}</div>
+            <div className="text-xs text-zinc-400">{contacts.filter(c => c.is_primary).length} primary</div>
+          </div>
+          
+          <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Audits</span>
+              <Shield className="text-amber-400" size={16} />
+            </div>
+            <div className="text-2xl font-bold text-white">{audits.length}</div>
+            <div className="text-xs text-emerald-400">{completedAudits} completed</div>
+          </div>
+          
+          <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800/50 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tasks</span>
+              <Target className="text-orange-400" size={16} />
+            </div>
+            <div className="text-2xl font-bold text-white">{client?.pending_onboarding_tasks ?? 0}</div>
+            <div className="text-xs text-zinc-400">onboarding</div>
+          </div>
         </div>
       </div>
 
-      {loading && <div className="text-sm text-[var(--text-2)]">Loading…</div>}
-      {!loading && err && <div className="text-sm text-red-500">{err}</div>}
+      {/* Navigation Tabs */}
+      <div className="bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-2xl p-2">
+        <nav className="flex space-x-2">
+          {[
+            { id: 'overview', label: 'Overview', icon: Eye },
+            { id: 'contacts', label: 'Contacts', icon: Users2, count: contacts.length },
+            { id: 'onboarding', label: 'Onboarding', icon: CheckCircle2, count: client?.pending_onboarding_tasks ?? 0 },
+            { id: 'enrichment', label: 'Enrichment', icon: Zap },
+            { id: 'engagements', label: 'Engagements', icon: Briefcase, count: engagements.length },
+            { id: 'audits', label: 'Audits', icon: Shield, count: audits.length },
+            { id: 'activity', label: 'Activity', icon: Activity },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                activeTab === tab.id
+                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                  : 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800/50'
+              }`}
+            >
+              <tab.icon size={16} />
+              <span>{tab.label}</span>
+              {typeof tab.count === 'number' && (
+                <span className={`ml-1 px-2 py-0.5 text-xs rounded-full ${
+                  activeTab === tab.id ? 'bg-cyan-500/20 text-cyan-300' : 'bg-zinc-800 text-zinc-400'
+                }`}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-      {!loading && !err && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Overview card */}
-            <div className="card p-4" style={{ background: '#181818' }}>
-              <div className="text-xs uppercase tracking-wide text-[var(--text-2)] mb-2">Overview</div>
-              <div className="space-y-2 text-sm">
-                <div><span className="opacity-70 mr-2">Created:</span>{client?.created_utc ? formatUtc(client.created_utc) : '-'}</div>
-                <div><span className="opacity-70 mr-2">Last Activity:</span>{client?.last_activity_utc ? formatUtc(client.last_activity_utc) : '-'}</div>
-                <div><span className="opacity-70 mr-2">Engagements:</span>{client?.engagement_count ?? 0}</div>
-                <div><span className="opacity-70 mr-2">Onboarding tasks:</span>{client?.pending_onboarding_tasks ?? 0}</div>
+      {/* Content */}
+      <div className="space-y-6">
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Primary Contact Card */}
+            <div className="lg:col-span-2 bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Star className="text-amber-400" size={20} />
+                  Primary Contact
+                </h3>
+                <button className="p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-zinc-400 hover:text-white">
+                  <Edit3 size={16} />
+                </button>
               </div>
-            </div>
-
-            {/* Tags */}
-            <div className="card p-4" style={{ background: '#181818' }}>
-              <div className="text-xs uppercase tracking-wide text-[var(--text-2)] mb-2">Tags</div>
-              <div className="flex flex-wrap gap-1.5">
-                {tags.length > 0 ? tags.map(t => <span key={t} className="chip">{t}</span>) : <span className="opacity-60 text-sm">—</span>}
-              </div>
-            </div>
-
-            {/* Quick search */}
-            <div className="card p-4" style={{ background: '#181818' }}>
-              <div className="text-xs uppercase tracking-wide text-[var(--text-2)] mb-2">Search</div>
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-70" />
-                <Input placeholder="Search within this client (coming soon)" className="pl-9" />
-              </div>
-            </div>
-          </div>
-
-          {/* Contacts */}
-          <div className="card p-4" style={{ background: '#181818' }}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-xs uppercase tracking-wide text-[var(--text-2)]">Contacts</div>
-              <div className="text-xs text-[var(--text-2)]">{contacts.length} total</div>
-            </div>
-            <div className="divide-y divide-[var(--border-subtle)] rounded-lg border border-[var(--border-subtle)]">
-              {contacts.length === 0 && <div className="p-3 text-sm text-[var(--text-2)]">No contacts</div>}
-              {contacts.map((c:any)=> (
-                <div key={c.contact_id} className="p-3 flex items-center gap-3">
-                  <Avatar name={`${c.first_name||''} ${c.last_name||''}`.trim() || c.email} />
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{`${c.first_name||''} ${c.last_name||''}`.trim() || '—'}</div>
-                    <div className="text-xs opacity-70 truncate">{c.email || ''}</div>
+              
+              {primaryContact ? (
+                <div className="flex items-start gap-4">
+                  <Avatar 
+                    name={`${primaryContact.first_name || ''} ${primaryContact.last_name || ''}`.trim() || primaryContact.email} 
+                    className="w-16 h-16"
+                  />
+                  <div className="flex-1">
+                    <h4 className="text-xl font-semibold text-white mb-1">
+                      {`${primaryContact.first_name || ''} ${primaryContact.last_name || ''}`.trim() || 'Unnamed Contact'}
+                    </h4>
+                    <p className="text-zinc-400 mb-4">{primaryContact.title || 'Contact'}</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {primaryContact.email && (
+                        <div className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg">
+                          <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                            <Mail className="text-blue-400" size={16} />
+                          </div>
+                          <div>
+                            <div className="text-xs text-zinc-500">Email</div>
+                            <div className="text-sm text-white">{primaryContact.email}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {primaryContact.phone && (
+                        <div className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg">
+                          <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                            <Phone className="text-emerald-400" size={16} />
+                          </div>
+                          <div>
+                            <div className="text-xs text-zinc-500">Phone</div>
+                            <div className="text-sm text-white">{primaryContact.phone}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {c.is_primary && <span className="badge badge-emerald ml-auto">Primary</span>}
                 </div>
-              ))}
+              ) : (
+                <div className="text-center py-8">
+                  <Users2 className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+                  <h4 className="text-lg font-medium text-zinc-400 mb-2">No primary contact</h4>
+                  <p className="text-zinc-500 mb-4">Add a primary contact to improve communication</p>
+                  <Button variant="primary" size="sm">
+                    <Plus size={16} className="mr-2" />
+                    Add Contact
+                  </Button>
+                </div>
+              )}
             </div>
-          </div>
 
-          {/* Audits */}
-          <div className="card p-4" style={{ background: '#181818' }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs uppercase tracking-wide text-[var(--text-2)]">Audits</div>
-              <div className="text-xs text-[var(--text-2)]">Showing latest {audits.length}</div>
-            </div>
-            <table className="table-modern text-sm rounded-xl overflow-hidden">
-              <thead className="text-left border-b border-[var(--border-subtle)]">
-                <tr>
-                  <th>Title</th>
-                  <th>Phase</th>
-                  <th>Complete</th>
-                  <th>Updated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {audits.length === 0 && (
-                  <tr><td colSpan={4} className="p-3 text-[var(--text-2)]">No audits found</td></tr>
-                )}
-                {audits.map((a:any) => (
-                  <tr key={a.audit_id} className="last:border-0">
-                    <td>{a.title || '-'}</td>
-                    <td>{a.phase || '-'}</td>
-                    <td>{typeof a.percent_complete === 'number' ? `${a.percent_complete}%` : '-'}</td>
-                    <td>{a.updated_utc ? formatUtc(a.updated_utc) : '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="text-xs text-[var(--text-2)] mt-2">Note: This list is global for now. Once the API exposes client or engagement filters, we’ll scope results.</div>
-          </div>
+            {/* Quick Actions */}
+            <div className="space-y-6">
+              {/* Quick Actions */}
+              <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Zap className="text-cyan-400" size={20} />
+                  Quick Actions
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <button className="p-3 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800 hover:border-zinc-700 rounded-lg transition-all group">
+                    <Plus className="text-cyan-400 mb-1" size={18} />
+                    <p className="text-xs text-zinc-300 group-hover:text-white">New Engagement</p>
+                  </button>
+                  <button onClick={() => setActiveTab('enrichment')} className="p-3 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800 hover:border-zinc-700 rounded-lg transition-all group">
+                    <Zap className="text-emerald-400 mb-1" size={18} />
+                    <p className="text-xs text-zinc-300 group-hover:text-white">Enrich Contact</p>
+                  </button>
+                  <button className="p-3 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800 hover:border-zinc-700 rounded-lg transition-all group">
+                    <MessageSquare className="text-purple-400 mb-1" size={18} />
+                    <p className="text-xs text-zinc-300 group-hover:text-white">Send Message</p>
+                  </button>
+                  <button className="p-3 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800 hover:border-zinc-700 rounded-lg transition-all group">
+                    <FileText className="text-amber-400 mb-1" size={18} />
+                    <p className="text-xs text-zinc-300 group-hover:text-white">View Documents</p>
+                  </button>
+                </div>
+              </div>
 
-          {/* Engagements */}
-          <div className="card p-4" style={{ background: '#181818' }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs uppercase tracking-wide text-[var(--text-2)]">Engagements</div>
-              <div className="text-xs text-[var(--text-2)]">{engagements.length} total</div>
+              {/* Company Details */}
+              <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Building2 size={20} className="text-zinc-400" />
+                  Company Details
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Tag className="text-zinc-500 mt-0.5" size={16} />
+                    <div>
+                      <p className="text-xs text-zinc-500">Client ID</p>
+                      <p className="text-sm text-white">{client?.client_id}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Briefcase className="text-zinc-500 mt-0.5" size={16} />
+                    <div>
+                      <p className="text-xs text-zinc-500">Engagements</p>
+                      <p className="text-sm text-white">{engagements.length}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Calendar className="text-zinc-500 mt-0.5" size={16} />
+                    <div>
+                      <p className="text-xs text-zinc-500">Created</p>
+                      <p className="text-sm text-white">{client?.created_utc ? formatUtc(client.created_utc) : '-'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Activity className="text-zinc-500 mt-0.5" size={16} />
+                    <div>
+                      <p className="text-xs text-zinc-500">Last Activity</p>
+                      <p className="text-sm text-white">{client?.last_activity_utc ? formatUtc(client.last_activity_utc) : '-'}</p>
+                    </div>
+                  </div>
+                </div>
+                <button className="w-full mt-4 px-4 py-2 bg-zinc-900/50 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-lg transition-all text-sm text-zinc-400 hover:text-white flex items-center justify-center gap-2">
+                  <Settings size={16} />
+                  Client Settings
+                </button>
+              </div>
+
+              {/* Tags */}
+              <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Tag className="text-orange-400" size={20} />
+                    Tags
+                  </h3>
+                  <button className="p-1 hover:bg-zinc-800/50 rounded transition-colors text-zinc-400 hover:text-white">
+                    <Plus size={16} />
+                  </button>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-2">
+                  {tags.length > 0 ? (
+                    <>
+                      {tags.slice(0, showAllTags ? tags.length : 5).map(tag => (
+                        <span key={tag} className="px-3 py-1 bg-zinc-800/50 text-zinc-300 text-sm rounded-lg border border-zinc-700">
+                          {tag}
+                        </span>
+                      ))}
+                      {tags.length > 5 && (
+                        <button onClick={() => setShowAllTags(!showAllTags)} className="px-3 py-1 text-xs text-cyan-400 hover:text-cyan-300">
+                          {showAllTags ? 'Show less' : `+${tags.length - 5} more`}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-zinc-500 text-sm">No tags assigned</p>
+                  )}
+                </div>
+              </div>
             </div>
-            <table className="table-modern text-sm rounded-xl overflow-hidden">
-              <thead className="text-left border-b border-[var(--border-subtle)]">
-                <tr>
-                  <th>Title</th>
-                  <th>Status</th>
-                  <th>Start</th>
-                  <th>End</th>
-                </tr>
-              </thead>
-              <tbody>
-                {engagements.length === 0 && (
-                  <tr><td colSpan={4} className="p-3 text-[var(--text-2)]">No engagements</td></tr>
-                )}
-        {engagements.map((e:any) => (
-                  <tr key={e.engagement_id} className="last:border-0">
-                    <td>{e.title || e.name || '-'}</td>
-                    <td>{e.status || '-'}</td>
-          <td>{(e.start_date ?? e.start_utc ?? e.startDate) ? new Date(e.start_date ?? e.start_utc ?? e.startDate).toLocaleDateString() : '-'}</td>
-          <td>{(e.end_date ?? e.end_utc ?? e.endDate) ? new Date(e.end_date ?? e.end_utc ?? e.endDate).toLocaleDateString() : '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
-        </>
-      )}
+        )}
+
+        {activeTab === 'contacts' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {contacts.map((contact) => (
+              <div key={contact.contact_id} className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition-all duration-200">
+                <div className="flex items-start justify-between mb-4">
+                  <Avatar 
+                    name={`${contact.first_name || ''} ${contact.last_name || ''}`.trim() || contact.email}
+                    className="w-12 h-12"
+                  />
+                  {contact.is_primary && (
+                    <Badge variant="success" className="text-xs">
+                      <Star size={12} className="mr-1" />
+                      Primary
+                    </Badge>
+                  )}
+                </div>
+                
+                <h4 className="text-lg font-semibold text-white mb-1">
+                  {`${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unnamed Contact'}
+                </h4>
+                <p className="text-zinc-400 text-sm mb-4">{contact.title || 'Contact'}</p>
+                
+                <div className="space-y-2">
+                  {contact.email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="text-zinc-500" size={14} />
+                      <span className="text-zinc-300">{contact.email}</span>
+                    </div>
+                  )}
+                  {contact.phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="text-zinc-500" size={14} />
+                      <span className="text-zinc-300">{contact.phone}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex gap-2 mt-4">
+                  <button className="flex-1 px-3 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm font-medium">
+                    <Mail size={14} className="mr-1" />
+                    Email
+                  </button>
+                  <button className="p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-zinc-400 hover:text-white">
+                    <MoreHorizontal size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+            
+            {contacts.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <Users2 className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-zinc-400 mb-2">No contacts found</h3>
+                <p className="text-zinc-500 mb-6">Add contacts to improve client communication</p>
+                <Button variant="primary">
+                  <Plus size={16} className="mr-2" />
+                  Add Contact
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'onboarding' && (
+          <OnboardingTasksTab clientId={clientId} />
+        )}
+
+        {activeTab === 'enrichment' && (
+          <EnrichmentTab clientId={clientId} />
+        )}
+
+        {activeTab === 'engagements' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">Engagements</h2>
+              <Button variant="primary">
+                <Plus size={16} className="mr-2" />
+                New Engagement
+              </Button>
+            </div>
+            
+            <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-zinc-800/50">
+                    <tr>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">Title</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">Status</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">Start Date</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">End Date</th>
+                      <th className="text-right px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800">
+                    {engagements.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center">
+                          <Briefcase className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-zinc-400 mb-2">No engagements</h3>
+                          <p className="text-zinc-500">Create your first engagement to get started</p>
+                        </td>
+                      </tr>
+                    )}
+                    {engagements.map((engagement) => (
+                      <tr key={engagement.engagement_id} className="hover:bg-zinc-800/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-white">{engagement.title || engagement.name || '-'}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge variant={engagement.status === 'active' ? 'success' : 'muted'}>
+                            {engagement.status || 'Unknown'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 text-zinc-300">
+                          {(engagement.start_date ?? engagement.start_utc ?? engagement.startDate) 
+                            ? new Date(engagement.start_date ?? engagement.start_utc ?? engagement.startDate).toLocaleDateString()
+                            : '-'
+                          }
+                        </td>
+                        <td className="px-6 py-4 text-zinc-300">
+                          {(engagement.end_date ?? engagement.end_utc ?? engagement.endDate)
+                            ? new Date(engagement.end_date ?? engagement.end_utc ?? engagement.endDate).toLocaleDateString()
+                            : '-'
+                          }
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button className="p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-zinc-400 hover:text-white">
+                            <ExternalLink size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'audits' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">Audit History</h2>
+              <div className="flex gap-3">
+                <Button variant="outline">
+                  <BarChart3 size={16} className="mr-2" />
+                  Analytics
+                </Button>
+                <Button variant="primary">
+                  <Plus size={16} className="mr-2" />
+                  New Audit
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-zinc-800/50">
+                    <tr>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">Title</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">Phase</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">Progress</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">Updated</th>
+                      <th className="text-right px-6 py-4 text-sm font-medium text-zinc-400 uppercase tracking-wide">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800">
+                    {audits.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center">
+                          <Shield className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-zinc-400 mb-2">No audits found</h3>
+                          <p className="text-zinc-500">Audits will appear here once they're created</p>
+                        </td>
+                      </tr>
+                    )}
+                    {audits.map((audit) => (
+                      <tr key={audit.audit_id} className="hover:bg-zinc-800/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-white">{audit.title || '-'}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-zinc-300">{audit.phase || '-'}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 bg-zinc-800 rounded-full h-2">
+                              <div 
+                                className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${audit.percent_complete || 0}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-sm text-zinc-300 min-w-[3rem]">
+                              {typeof audit.percent_complete === 'number' ? `${audit.percent_complete}%` : '-'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-zinc-300">
+                          {audit.updated_utc ? formatUtc(audit.updated_utc) : '-'}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button className="p-2 hover:bg-zinc-800/50 rounded-lg transition-colors text-zinc-400 hover:text-white">
+                            <ExternalLink size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'activity' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">Recent Activity</h2>
+            
+            <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6">
+              <div className="text-center py-12">
+                <Activity className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-zinc-400 mb-2">Activity Timeline</h3>
+                <p className="text-zinc-500">Activity tracking will be implemented soon</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

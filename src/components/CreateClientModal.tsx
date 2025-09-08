@@ -7,7 +7,7 @@ import { Badge } from '../ui/badge.tsx';
 import { Avatar } from '../ui/avatar.tsx';
 // dropdown.tsx provides DropdownMenu primitives; we use native <select> here for simplicity
 import { api as gen } from '../api/generated/client.ts';
-import { createClient } from '../services/api.ts';
+import { createClient, extractClientFromUrl, createClientProc } from '../services/api.ts';
 import { toast } from '../lib/toast.ts';
 
 type Props = {
@@ -39,6 +39,17 @@ export default function CreateClientModal({ open, onClose, onCreated }: Props) {
   const [newIndustryDescription, setNewIndustryDescription] = useState('');
   const [industryError, setIndustryError] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
+  // URL extract flow
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [extracting, setExtracting] = useState(false);
+  const [extracted, setExtracted] = useState<any | null>(null);
+  // Logo URL
+  const [logoUrl, setLogoUrl] = useState('');
+  
+  // Additional fields for comprehensive client creation
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [engagementTags, setEngagementTags] = useState<any[]>([]);
 
   const InlineSpinner: React.FC<{ className?: string }> = ({ className = '' }) => (
     <svg className={"animate-spin inline-block " + className} width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
@@ -121,17 +132,100 @@ export default function CreateClientModal({ open, onClose, onCreated }: Props) {
   }
 
   async function handleSubmit() {
-    if (!name) {
+    if (!name && !extracted?.name) {
       setClientError('Client name required');
       return;
     }
     setClientError(null);
     setSubmitting(true);
     try {
+      // If we have extracted JSON, prefer direct create-proc pass-through
+      if (extracted && extracted.name) {
+        const createBody = { ...extracted } as any;
+        // allow overriding status/pack from local UI controls when present
+        if (isActive !== undefined) createBody.is_active = isActive;
+        if (selectedPackCode) createBody.pack_code = selectedPackCode;
+        if (selectedPackId) createBody.pack_code = String(selectedPackId);
+        // Include logo URL if provided locally or extracted
+        if (logoUrl) createBody.logo_url = logoUrl;
+        
+        // Include all additional fields for comprehensive client creation
+        if (contacts.length) {
+          createBody.contacts_json = contacts.map((c: any, idx: number) => ({
+            ...c,
+            is_primary: !!c.is_primary,
+            is_active: c.is_active === undefined ? true : !!c.is_active,
+            temp_contact_key: `contact_${idx}`,
+          }));
+        }
+        
+        if (notes.length) {
+          createBody.notes_json = notes.map(n => ({
+            title: 'Note',
+            content: n.note,
+            note_type: 'general',
+            is_important: false,
+            is_active: true
+          }));
+        }
+        
+        if (locations.length) {
+          createBody.locations_json = locations.map((l: any, idx: number) => ({
+            ...l,
+            is_primary: idx === 0 // First location is primary
+          }));
+        }
+        
+        if (selectedIndustryId) {
+          createBody.industries_json = [{ 
+            industry_id: selectedIndustryId, 
+            is_primary: true 
+          }];
+        }
+        
+        if (documents.length) {
+          createBody.documents_json = documents;
+        }
+        
+        if (integrations.length) {
+          createBody.integrations_json = integrations;
+        }
+        
+        if (engagementTags.length) {
+          createBody.engagement_tags_json = engagementTags.map(t => ({
+            tag_id: t.tag_id || t.id
+          }));
+        }
+        
+        // Handle contact social profiles
+        const contactSocialProfiles: any[] = [];
+        (contacts || []).forEach((c: any, idx: number) => {
+          (c.social_profiles || []).forEach((sp: any) => {
+            contactSocialProfiles.push({
+              temp_contact_key: `contact_${idx}`,
+              provider: sp.provider,
+              profile_url: sp.profile_url,
+              is_primary: !!sp.is_primary,
+            });
+          });
+        });
+        if (contactSocialProfiles.length) {
+          createBody.contact_social_profiles_json = contactSocialProfiles;
+        }
+        const res = await createClientProc(createBody);
+        const newId = res?.data?.client?.client_id || res?.data?.client_id;
+        toast.success?.('Client created');
+        onCreated?.(res);
+        onClose();
+        if (newId) window.location.href = `/clients/${newId}`;
+        return;
+      }
+
       // compute packArg preservation: prefer selectedPackId (number) else selectedPackCode (string)
       const packArg = selectedPackId ?? (selectedPackCode ?? null);
 
       const extras: Record<string, any> = {};
+      if (logoUrl) extras.logo_url = logoUrl;
       if (contacts.length) extras.client_contacts = contacts.map((c: any, idx: number) => ({
         ...c,
         is_primary: !!c.is_primary,
@@ -209,6 +303,37 @@ export default function CreateClientModal({ open, onClose, onCreated }: Props) {
   return (
     <Modal title="Create a new client" onClose={onClose} className="max-w-[900px]">
       <div className="grid grid-cols-3 gap-6">
+        {/* Top: URL extract assistant */}
+        <div className="col-span-3 -mb-2">
+          <div className="p-3 rounded-md border border-white/10 bg-[var(--surface-2)] flex items-center gap-3">
+            <input
+              className="input flex-1"
+              placeholder="Paste company URL (LinkedIn, website, etc.)"
+              value={sourceUrl}
+              onChange={(e:any)=>setSourceUrl(e.target.value)}
+            />
+            <Button disabled={!sourceUrl || extracting} onClick={async ()=>{
+              setExtracting(true);
+              try {
+                const res = await extractClientFromUrl(sourceUrl);
+                const data = res?.data || res;
+                setExtracted(data);
+                if (data?.name) setName(data.name);
+                if (data?.logo_url) setLogoUrl(data.logo_url);
+                toast.success?.('Data extracted');
+              } catch(e:any) {
+                // error toast handled in api helper
+              } finally {
+                setExtracting(false);
+              }
+            }}>{extracting ? 'Extracting…' : 'Extract Data'}</Button>
+          </div>
+          {extracted && (
+            <div className="mt-2 text-xs text-[var(--text-2)]">
+              Preview loaded from URL. You can edit fields before creating.
+            </div>
+          )}
+        </div>
         {/* Left column - main form */}
         <div className="col-span-2 space-y-4">
           <div>
@@ -216,6 +341,16 @@ export default function CreateClientModal({ open, onClose, onCreated }: Props) {
             <Input value={name} onChange={(e: any) => setName(e.target.value)} aria-invalid={!!clientError} />
             <div className="text-xs text-[var(--text-2)] mt-1">Official client name.</div>
             {clientError && <div className="text-sm text-red-500 mt-1">{clientError}</div>}
+          </div>
+
+          <div>
+            <label className="field-label">Logo URL</label>
+            <Input 
+              placeholder="Optional — company logo URL" 
+              value={logoUrl} 
+              onChange={(e: any) => setLogoUrl(e.target.value)} 
+            />
+            <div className="text-xs text-[var(--text-2)] mt-1">Company logo image URL (will be displayed in client lists).</div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -242,55 +377,113 @@ export default function CreateClientModal({ open, onClose, onCreated }: Props) {
           </div>
 
           <div>
-            <label className="field-label">Website</label>
-            <Input placeholder="Optional — company website" value={(tags && tags.length && tags[0]) || ''} onChange={() => { }} />
-            <div className="text-xs text-[var(--text-2)] mt-1">Enter a website to auto-suggest name, logo and email domain.</div>
-          </div>
-
-          <div>
-            <a href="#" onClick={(e) => { e.preventDefault(); /* focus primary contact area */ }} className="text-sm underline">Add primary contact</a>
+            <a href="#" onClick={(e) => { 
+              e.preventDefault(); 
+              // Add a simple contact form or expand a contact section
+              setContacts([...contacts, { first_name: '', last_name: '', email: '', is_primary: contacts.length === 0 }]);
+            }} className="text-sm underline">Add primary contact</a>
             <div className="text-xs text-[var(--text-2)] mt-1">Add a primary contact for quick communications.</div>
           </div>
 
-          {/* contacts/notes/tags area (collapsed by default) */}
-          <div>
-            <div className="text-xs uppercase tracking-wide text-[var(--text-2)] mb-2">Additional details</div>
+          {/* Show contact form when contacts exist */}
+          {contacts.length > 0 && (
             <div className="space-y-3">
-              {/* contacts list simplified */}
-              {contacts.length > 0 && (
-                <div>
-                  <div className="text-sm font-medium">Contacts</div>
-                  <div className="mt-2 space-y-2">
-                    {contacts.map((c: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <Avatar name={`${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email} />
-                        <div className="min-w-0">
-                          <div className="font-medium truncate">{`${c.first_name || ''} ${c.last_name || ''}`.trim() || '—'}</div>
-                          <div className="text-xs opacity-70 truncate">{c.email || ''}</div>
-                        </div>
-                        {c.is_primary && <Badge variant="success">Primary</Badge>}
-                      </div>
-                    ))}
+              <div className="text-sm font-medium">Contacts</div>
+              {contacts.map((c: any, i: number) => (
+                <div key={i} className="border border-white/10 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      placeholder="First name" 
+                      value={c.first_name || ''} 
+                      onChange={(e: any) => {
+                        const newContacts = [...contacts];
+                        newContacts[i] = { ...newContacts[i], first_name: e.target.value };
+                        setContacts(newContacts);
+                      }}
+                      className="flex-1"
+                    />
+                    <Input 
+                      placeholder="Last name" 
+                      value={c.last_name || ''} 
+                      onChange={(e: any) => {
+                        const newContacts = [...contacts];
+                        newContacts[i] = { ...newContacts[i], last_name: e.target.value };
+                        setContacts(newContacts);
+                      }}
+                      className="flex-1"
+                    />
+                  </div>
+                  <Input 
+                    placeholder="Email address" 
+                    type="email"
+                    value={c.email || ''} 
+                    onChange={(e: any) => {
+                      const newContacts = [...contacts];
+                      newContacts[i] = { ...newContacts[i], email: e.target.value };
+                      setContacts(newContacts);
+                    }}
+                  />
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input 
+                        type="checkbox" 
+                        checked={c.is_primary || false}
+                        onChange={(e) => {
+                          const newContacts = contacts.map((contact, idx) => ({
+                            ...contact,
+                            is_primary: idx === i ? e.target.checked : false
+                          }));
+                          setContacts(newContacts);
+                        }}
+                      />
+                      Primary contact
+                    </label>
+                    <button 
+                      onClick={() => setContacts(contacts.filter((_, idx) => idx !== i))}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
-              )}
-
-              {/* notes */}
-              {notes.length > 0 && (
-                <div>
-                  <div className="text-sm font-medium">Notes</div>
-                  <div className="mt-2 text-sm text-[var(--text-2)]">{notes.map(n => n.note).join(' — ')}</div>
-                </div>
-              )}
+              ))}
             </div>
-          </div>
+          )}
+
+          {/* Show notes if any exist */}
+          {notes.length > 0 && (
+            <div>
+              <div className="text-sm font-medium">Notes</div>
+              <div className="mt-2 text-sm text-[var(--text-2)]">{notes.map(n => n.note).join(' — ')}</div>
+            </div>
+          )}
         </div>
 
         {/* Right column - preview card */}
         <div className="col-span-1">
           <div className="p-4 rounded-md border border-white/10 bg-[var(--surface-2)]">
             <div className="flex items-start gap-3">
-              <Avatar name={name || 'V'} />
+              {logoUrl ? (
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                  <img 
+                    src={logoUrl} 
+                    alt={`${name} logo`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  <div className="w-full h-full hidden bg-gradient-to-br from-[#4997D0] to-cyan-500 flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">
+                      {(name || 'V').split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <Avatar name={name || 'V'} />
+              )}
               <div className="flex-1">
                 <div className="font-semibold">{name || 'Company preview'}</div>
                 <div className="text-sm text-[var(--text-2)]">Website</div>
@@ -300,27 +493,27 @@ export default function CreateClientModal({ open, onClose, onCreated }: Props) {
             </div>
 
             <div className="mt-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Industry</div>
-                <button className="text-sm text-[var(--text-2)]">Cancel</button>
-              </div>
-              <div className="mt-2">
-                <select value={selectedIndustryId ?? ''} onChange={(e: any) => setSelectedIndustryId(e.target.value ? Number(e.target.value) : null)} className="input w-full">
-                  <option value="">— No industries —</option>
-                  {industries.map((it: any) => <option key={String(it.industry_id)} value={it.industry_id}>{it.name}</option>)}
-                </select>
-              </div>
+              <div className="text-sm font-medium mb-2">Industry (Optional)</div>
+              <select value={selectedIndustryId ?? ''} onChange={(e: any) => setSelectedIndustryId(e.target.value ? Number(e.target.value) : null)} className="input w-full">
+                <option value="">— Select industry —</option>
+                {industries.map((it: any) => <option key={String(it.industry_id)} value={it.industry_id}>{it.name}</option>)}
+              </select>
 
-              <div className="mt-3">
-                <Input placeholder="Industry name" value={newIndustryName} onChange={(e: any) => setNewIndustryName(e.target.value)} />
-                <Input placeholder="Description (optional)" className="mt-2" value={newIndustryDescription} onChange={(e: any) => setNewIndustryDescription(e.target.value)} />
-                <div className="mt-2 flex gap-2">
-                  <Button onClick={handleCreateIndustry} disabled={creatingIndustry || submitting || !newIndustryName}>{creatingIndustry ? <><InlineSpinner className="h-4 w-4 mr-2" />Creating…</> : 'Create industry'}</Button>
-                  <Button variant="subtle" onClick={() => { setNewIndustryName(''); setNewIndustryDescription(''); }}>Cancel</Button>
+              {/* Compact create new industry section */}
+              <details className="mt-2">
+                <summary className="text-xs text-[var(--text-2)] cursor-pointer hover:text-white">+ Create new industry</summary>
+                <div className="mt-2 space-y-2">
+                  <Input placeholder="Industry name" value={newIndustryName} onChange={(e: any) => setNewIndustryName(e.target.value)} />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleCreateIndustry} disabled={creatingIndustry || submitting || !newIndustryName}>
+                      {creatingIndustry ? 'Creating…' : 'Create'}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => { setNewIndustryName(''); setNewIndustryDescription(''); }}>Cancel</Button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="text-sm text-[var(--text-2)] mt-4">Industry: — No industry —</div>
+              </details>
+              
+              {industryError && <div className="text-xs text-red-400 mt-1">{industryError}</div>}
             </div>
           </div>
         </div>
@@ -332,7 +525,7 @@ export default function CreateClientModal({ open, onClose, onCreated }: Props) {
         </div>
         <div>
           <Button className="btn-create" onClick={handleSubmit} disabled={submitting || !name}>
-            {submitting ? <><InlineSpinner className="h-4 w-4 mr-2" />Creating…</> : 'Create & continue setup'}
+            {submitting ? <><InlineSpinner className="h-4 w-4 mr-2" />Creating…</> : 'Create'}
           </Button>
         </div>
       </div>

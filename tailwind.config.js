@@ -7,6 +7,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '475px',
+      },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui']
       },
@@ -42,5 +45,34 @@ export default {
       }
     }
   },
-  plugins: []
+  plugins: [
+    function({ addUtilities }) {
+      addUtilities({
+        '.scrollbar-thin': {
+          'scrollbar-width': 'thin',
+          'scrollbar-color': '#3f4144 #18181b'
+        },
+        '.scrollbar-thin::-webkit-scrollbar': {
+          'width': '6px'
+        },
+        '.scrollbar-thin::-webkit-scrollbar-track': {
+          'background': '#18181b',
+          'border-radius': '3px'
+        },
+        '.scrollbar-thin::-webkit-scrollbar-thumb': {
+          'background': '#3f4144',
+          'border-radius': '3px'
+        },
+        '.scrollbar-thin::-webkit-scrollbar-thumb:hover': {
+          'background': '#52525b'
+        },
+        '.scrollbar-track-zinc-900::-webkit-scrollbar-track': {
+          'background': '#18181b'
+        },
+        '.scrollbar-thumb-zinc-700::-webkit-scrollbar-thumb': {
+          'background': '#3f4144'
+        }
+      })
+    }
+  ]
 };

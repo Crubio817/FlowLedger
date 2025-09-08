@@ -184,18 +184,8 @@ body.theme-light .accent-btn { color: #fff; }
    non-interactive (pointer-events:none) and sized large with heavy blur so it
    reads as environmental lighting rather than a UI element. */
 body.theme-dark .workspace::before {
-  content: "";
-  position: absolute;
-  right: 6%;
-  top: 6%;
-  width: 60rem;
-  height: 40rem;
-  background: radial-gradient(closest-side, rgba(73,151,208,0.09), rgba(73,151,208,0.02) 40%, transparent 60%);
-  filter: blur(80px) saturate(1.05);
-  transform: translateZ(0);
-  pointer-events: none;
-  z-index: 0;
-  mix-blend-mode: screen;
+  /* Completely disable this background element */
+  display: none;
 }
 /* Make sure the workspace content stays above the background glow */
 .workspace > * { position: relative; z-index: 1; }
@@ -210,16 +200,8 @@ body.theme-dark .sidenav {
   position: relative;
 }
 body.theme-dark .workspace::before {
-  /* remove workspace highlight strip (flat background) */
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0; /* disabled */
-  pointer-events: none;
-  background: transparent;
-  z-index: 1;
+  /* Completely disable both background elements */
+  display: none;
 }
 
 /* Slightly reduce the inset divider so the shadow reads more naturally */
@@ -256,12 +238,12 @@ body.vibe-glass .sidenav {
   backdrop-filter: blur(6px) saturate(1.05);
   border-right: 1px solid rgba(255,255,255,0.04);
 }
-body.vibe-glass .workspace { background: #050505; }
+/* Removed solid background - keep grid lines only */
 body.vibe-glass .sidenav::after { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); width: 2px; box-shadow: 0 0 18px rgba(255,255,255,0.02); }
 
 /* Matte vibe: deep flat blacks and a subtle etched divider */
 body.vibe-matte .sidenav { background: var(--black-matte); }
-body.vibe-matte .workspace { background: #070707; }
+/* Removed solid background - keep grid lines only */
 body.vibe-matte .sidenav::after { background: rgba(255,255,255,0.015); width: 1px; box-shadow: none; }
 
 /* No workspace gradient: keep flat background for clarity per request */
@@ -272,6 +254,32 @@ body.vibe-matte .sidenav::after { background: rgba(255,255,255,0.015); width: 1p
 
 /* Panel and utility styles */
 .panel { @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-soft relative; }
+
+/* Standard content container - semi-transparent with grid showing through */
+.content-container {
+  background: rgba(24, 24, 27, 0.3); /* zinc-900/30 */
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(39, 39, 42, 0.5); /* zinc-800/50 */
+  border-radius: 0.5rem; /* rounded-lg */
+}
+
+/* Table container variant */
+.table-container {
+  background: rgba(24, 24, 27, 0.3); /* zinc-900/30 */
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(39, 39, 42, 0.5); /* zinc-800/50 */
+  border-radius: 0.5rem; /* rounded-lg */
+  overflow: hidden;
+}
+
+/* Card container variant */
+.card-container {
+  background: rgba(24, 24, 27, 0.2); /* zinc-900/20 */
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(39, 39, 42, 0.3); /* zinc-800/30 */
+  border-radius: 0.75rem; /* rounded-xl */
+  padding: 1.5rem; /* p-6 */
+}
 .panel::before {
   /* simplified: use a subtle inset stroke instead of a mask/xor composite which
      can create circular/magnifier effects in some browsers. This keeps the
@@ -553,4 +561,80 @@ a:hover { text-decoration: underline; }
 button.chip[title="Toggle focus vignette"],
 .chip[title="Toggle focus vignette"] {
   display: none !important;
+}
+
+/* Confirmation Dialog Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 200px;
+  }
+}
+
+/* Custom Scrollbar Styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #3f4144 #18181b;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #18181b;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #3f4144;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+.scrollbar-track-zinc-900::-webkit-scrollbar-track {
+  background: #18181b;
+}
+
+.scrollbar-thumb-zinc-700::-webkit-scrollbar-thumb {
+  background: #3f4144;
+}
+
+/* Module System Theming */
+:root {
+  /* Module theming */
+  --module-accent: #3b82f6;
+}
+
+/* Module Theme Override */
+body[data-module] {
+  --accent: var(--module-accent);
+}
+
+/* Module-specific styling */
+.module-content {
+  /* Any module-specific styles can go here */
+}
+
+/* Module glow effects */
+.module-glow {
+  position: relative;
+}
+
+.module-glow::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  background: linear-gradient(45deg, var(--module-accent)20, var(--module-accent)40, var(--module-accent)20);
+  border-radius: inherit;
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: -1;
 }

@@ -254,6 +254,16 @@ export async function createClient(name: string, is_active = true, primaryContac
   }
 }
 
+// Update client (deactivate, reactivate, etc.)
+export async function updateClient(id: number, payload: { is_active?: boolean; client_name?: string; logo_url?: string }): Promise<any> {
+  return withErrors(() => http.put(`/clients/${id}`, payload), 'Update client failed');
+}
+
+// Delete client completely
+export async function deleteClient(id: number): Promise<any> {
+  return withErrors(() => http.del(`/clients/${id}`), 'Delete client failed');
+}
+
 export async function listAudits(page = 1, limit = 20, sort = 'created_utc', order: 'asc' | 'desc' = 'desc'):
   Promise<{ data: Audit[]; meta?: PageMeta }> {
   const q = new URLSearchParams({ page: String(page), limit: String(limit), sort, order });
@@ -269,6 +279,27 @@ export async function listPathTemplates(page = 1, limit = 200): Promise<{ data: 
 
 // Task packs (optional feature on some backends)
 export type TaskPack = { pack_id?: number; pack_code?: string; pack_name?: string; description?: string };
+
+export type TaskPackDetailed = {
+  pack_id: number;
+  pack_code: string;
+  pack_name: string;
+  description?: string | null;
+  status_scope?: 'active' | 'prospect' | 'any';
+  is_active?: boolean;
+  effective_from_utc?: string | null;
+  effective_to_utc?: string | null;
+};
+
+export type PackTask = {
+  pack_task_id: number;
+  pack_id: number;
+  name: string;
+  sort_order?: number | null;
+  due_days?: number | null;
+  status_scope?: string | null;
+  is_active?: boolean;
+};
 export async function listTaskPacks(page = 1, limit = 200): Promise<ApiEnvelope<TaskPack[]>> {
   const q = new URLSearchParams({ page: String(page), limit: String(limit) });
   return withErrors(() => http.get<ApiEnvelope<TaskPack[]>>(`/task-packs?${q.toString()}`), 'Failed to load task packs');
@@ -468,6 +499,68 @@ export async function getClientsOverview(limit = 50, query?: string): Promise<Ap
   return withErrors(() => http.get<ApiEnvelope<ClientsOverviewItem[]>>(`/clients-overview?${q.toString()}`), 'Failed to load clients overview');
 }
 
+// New client creation flow (AI-assisted) - matches /api/clients/create-proc endpoint
+export type CreateProcBody = {
+  Name: string; // Required - client name
+  IsActive?: boolean;
+  PackCode?: string | null;
+  PrimaryContactId?: number | null;
+  OwnerUserId?: number | null;
+  LogoUrl?: string | null;
+  // Child arrays - inserted in separate transaction
+  contacts?: Array<{
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone?: string;
+    title?: string;
+    is_primary: boolean;
+    is_active: boolean;
+  }>;
+  notes?: Array<{
+    title: string;
+    content: string;
+    note_type: string;
+    is_important: boolean;
+    is_active: boolean;
+    created_by?: number;
+  }>;
+  locations?: Array<{
+    label: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    state_province: string;
+    postal_code: string;
+    country: string;
+    is_primary: boolean;
+  }>;
+  client_industries?: Array<{
+    industry_id: number;
+    is_primary: boolean;
+  }>;
+  client_tag_map?: Array<{
+    engagement_id: number;
+    tag_id: number;
+  }>;
+  contact_social_profiles?: Array<{
+    contact_id?: number;
+    contact_email?: string;
+    contact_index?: number;
+    provider: string;
+    profile_url: string;
+    is_primary: boolean;
+  }>;
+} & Record<string, any>;
+
+export async function extractClientFromUrl(url: string): Promise<ApiEnvelope<any>> {
+  return withErrors(() => http.post<ApiEnvelope<any>>('/clients/fetch-from-url', { url }), 'Extract client from URL failed');
+}
+
+export async function createClientProc(body: CreateProcBody): Promise<ApiEnvelope<any>> {
+  return withErrors(() => http.post<ApiEnvelope<any>>('/clients/create-proc', body), 'Create client failed');
+}
+
 // Client engagements types & CRUD (per OpenAPI)
 export type ClientEngagement = {
   engagement_id?: number;
@@ -506,20 +599,164 @@ export async function deleteEngagementTagMap(engagementId: number, tagId: number
 }
 
 // Onboarding tasks
-export type OnboardingTask = { task_id?: number; client_id: number; title: string; due_date?: string | null; assignee_user_id?: number | null; status?: string | null; created_utc?: string; updated_utc?: string | null };
-export async function listOnboardingTasks(page = 1, limit = 20, clientId?: number): Promise<{ data: OnboardingTask[]; meta?: PageMeta }> {
-  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
-  if (clientId) q.set('client_id', String(clientId));
-  return withErrors(() => http.get(`/onboarding-tasks?${q.toString()}`), 'Failed to load onboarding tasks');
+export type OnboardingTask = {
+  task_id: number;
+  client_id: number;
+  name: string;
+  description?: string | null;
+  status?: string; // "open", "done", etc.
+  due_utc?: string | null; // ISO date-time
+};
+// Onboarding Tasks API
+export async function listOnboardingTasks(
+  page = 1, 
+  limit = 20, 
+  clientId?: number, 
+  status?: string, 
+  q?: string
+): Promise<{ data: OnboardingTask[]; meta?: PageMeta }> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (clientId) params.set('client_id', String(clientId));
+  if (status) params.set('status', status);
+  if (q) params.set('q', q);
+  return withErrors(() => http.get(`/client-onboarding-tasks?${params.toString()}`), 'Failed to load onboarding tasks');
 }
-export async function createOnboardingTask(payload: { client_id: number; title: string; due_date?: string | null; assignee_user_id?: number | null; status?: string | null }): Promise<OnboardingTask> {
-  return withErrors(() => http.post('/onboarding-tasks', payload), 'Create onboarding task failed');
+
+export async function getOnboardingTask(taskId: number): Promise<OnboardingTask> {
+  return withErrors(() => http.get(`/client-onboarding-tasks/${taskId}`), 'Failed to load onboarding task');
 }
-export async function updateOnboardingTask(id: number, payload: Partial<OnboardingTask>): Promise<OnboardingTask> {
-  return withErrors(() => http.put(`/onboarding-tasks/${id}`, payload), 'Update onboarding task failed');
+
+export async function createOnboardingTask(payload: {
+  client_id: number;
+  name: string;
+  description?: string;
+  status?: string;
+  due_utc?: string;
+}): Promise<OnboardingTask> {
+  return withErrors(() => http.post('/client-onboarding-tasks', payload), 'Create onboarding task failed');
 }
-export async function deleteOnboardingTask(id: number): Promise<{ deleted?: number }> {
-  return withErrors(() => http.del(`/onboarding-tasks/${id}`), 'Delete onboarding task failed');
+
+export async function updateOnboardingTask(id: number, payload: {
+  name?: string;
+  description?: string;
+  status?: string;
+  due_utc?: string;
+}): Promise<OnboardingTask> {
+  return withErrors(() => http.put(`/client-onboarding-tasks/${id}`, payload), 'Update onboarding task failed');
+}
+
+export async function deleteOnboardingTask(id: number): Promise<{ deleted: number }> {
+  return withErrors(() => http.del(`/client-onboarding-tasks/${id}`), 'Delete onboarding task failed');
+}
+
+export async function completeOnboardingTask(id: number): Promise<OnboardingTask> {
+  return withErrors(() => http.post(`/client-onboarding-tasks/${id}/complete`, {}), 'Complete onboarding task failed');
+}
+
+export async function reopenOnboardingTask(id: number): Promise<OnboardingTask> {
+  return withErrors(() => http.put(`/client-onboarding-tasks/${id}/reopen`), 'Failed to reopen onboarding task');
+}
+
+// Module Management Types
+export type Module = {
+  module_id: string;
+  key: string;
+  name: string;
+  scope: string;
+  color: string;
+  description?: string | null;
+  created_utc?: string;
+  updated_utc?: string;
+};
+
+export type ModuleVersion = {
+  module_version_id: string;
+  module_id: string;
+  semver: string;
+  status: string;
+  created_utc?: string;
+};
+
+export type ModuleInstance = {
+  module_instance_id: string;
+  module_id: string;
+  module_version_id: string;
+  client_id: number;
+  is_enabled: boolean;
+  created_utc?: string;
+};
+
+export type ModuleConfig = {
+  module_instance_id: string;
+  cfg_json: string;
+  is_active: boolean;
+  created_utc?: string;
+};
+
+// Module API Functions
+export async function getModulesRegistry(): Promise<{ data: Module[] }> {
+  return withErrors(() => http.get('/modules/registry'), 'Failed to load modules registry');
+}
+
+export async function getModule(moduleId: string): Promise<Module> {
+  return withErrors(() => http.get(`/modules/registry/${moduleId}`), 'Failed to load module');
+}
+
+export async function createModule(payload: {
+  key: string;
+  name: string;
+  scope?: string;
+  color?: string;
+  description?: string;
+}): Promise<Module> {
+  return withErrors(() => http.post('/modules/registry', payload), 'Failed to create module');
+}
+
+export async function updateModule(moduleId: string, payload: {
+  name?: string;
+  scope?: string;
+  color?: string;
+  description?: string;
+}): Promise<Module> {
+  return withErrors(() => http.put(`/modules/registry/${moduleId}`, payload), 'Failed to update module');
+}
+
+export async function getModuleInstanceConfig(instanceId: string): Promise<{ cfg_json: string }> {
+  return withErrors(() => http.get(`/modules/instances/${instanceId}/config`), 'Failed to load module config');
+}
+
+export async function updateModuleInstanceConfig(instanceId: string, payload: { cfg_json: string }): Promise<void> {
+  return withErrors(() => http.put(`/modules/instances/${instanceId}/config`, payload), 'Failed to update module config');
+}
+
+export async function seedTasksFromPack(clientId: number, packCode: string): Promise<{ inserted: number }> {
+  return withErrors(() => http.post('/client-onboarding-tasks/seed-from-pack', { 
+    client_id: clientId, 
+    pack_code: packCode 
+  }), 'Seed tasks from pack failed');
+}
+
+// Task Packs API
+export async function listTaskPacksDetailed(
+  statusScope?: string,
+  q?: string,
+  includeInactive = false,
+  page = 1,
+  pageSize = 20
+): Promise<{ data: TaskPackDetailed[]; meta?: PageMeta }> {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (statusScope) params.set('status_scope', statusScope);
+  if (q) params.set('q', q);
+  if (includeInactive) params.set('include_inactive', 'true');
+  return withErrors(() => http.get(`/task-packs?${params.toString()}`), 'Failed to load task packs');
+}
+
+export async function getTaskPackDetailed(packId: number): Promise<TaskPackDetailed> {
+  return withErrors(() => http.get(`/task-packs/${packId}`), 'Failed to load task pack');
+}
+
+export async function getTaskPackTasks(packId: number): Promise<{ data: PackTask[]; meta?: PageMeta }> {
+  return withErrors(() => http.get(`/task-packs/${packId}/tasks`), 'Failed to load pack tasks');
 }
 
 // Client contacts types & CRUD
@@ -587,4 +824,128 @@ export async function createClientViaProcedure(payload: {
 }): Promise<any> {
   const res = await http.post<ApiEnvelope<any>>('/clients/create-proc', payload);
   return (res as any)?.data ?? res;
+}
+
+// Contact Enrichment API
+export type EnrichmentJob = {
+  job_id: string;
+  client_id: number;
+  contact_id?: number;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  provider: string;
+  contact_name: string;
+  contact_email?: string;
+  company?: string;
+  domain?: string;
+  created_date: string;
+  updated_date?: string;
+  error_message?: string;
+  enriched_data?: any;
+};
+
+export type EnrichmentRequest = {
+  first_name: string;
+  last_name: string;
+  email?: string;
+  company?: string;
+  domain?: string;
+};
+
+export type EnrichmentStats = {
+  total: number;
+  pending: number;
+  completed: number;
+  failed: number;
+};
+
+// MCP Server integration for enrichment
+const MCP_BASE_URL = 'http://localhost:4001/mcp';
+
+export async function enrichContact(payload: EnrichmentRequest): Promise<{ job_id: string }> {
+  const response = await fetch(MCP_BASE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'enrich_contact',
+        arguments: payload
+      }
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`MCP enrichment failed: ${response.statusText}`);
+  }
+  
+  const result = await response.json();
+  if (result.error) {
+    throw new Error(result.error.message || 'Enrichment failed');
+  }
+  
+  return result.result;
+}
+
+export async function getEnrichmentStatus(jobId: string): Promise<any> {
+  const response = await fetch(MCP_BASE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/call',
+      params: {
+        name: 'get_enrichment',
+        arguments: { job_id: jobId }
+      }
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`MCP status check failed: ${response.statusText}`);
+  }
+  
+  const result = await response.json();
+  if (result.error) {
+    throw new Error(result.error.message || 'Status check failed');
+  }
+  
+  return result.result;
+}
+
+// REST endpoints for enrichment job management
+export async function createEnrichmentJob(payload: Partial<EnrichmentJob>): Promise<EnrichmentJob> {
+  return withErrors(() => http.post('/enrichment-jobs', payload), 'Create enrichment job failed');
+}
+
+export async function listEnrichmentJobs(clientId?: number): Promise<{ data: EnrichmentJob[]; meta?: PageMeta }> {
+  const params = new URLSearchParams();
+  if (clientId) params.set('client_id', clientId.toString());
+  
+  return withErrors(() => http.get(`/enrichment-jobs?${params.toString()}`), 'Failed to load enrichment jobs');
+}
+
+export async function getEnrichmentJob(jobId: string): Promise<EnrichmentJob> {
+  return withErrors(() => http.get(`/enrichment-jobs/${jobId}`), 'Failed to load enrichment job');
+}
+
+export async function updateEnrichmentJob(jobId: string, payload: Partial<EnrichmentJob>): Promise<EnrichmentJob> {
+  return withErrors(() => http.put(`/enrichment-jobs/${jobId}`, payload), 'Update enrichment job failed');
+}
+
+export async function getEnrichmentStats(clientId?: number): Promise<EnrichmentStats> {
+  const params = new URLSearchParams();
+  if (clientId) params.set('client_id', clientId.toString());
+  
+  return withErrors(() => http.get(`/enrichment-jobs/stats?${params.toString()}`), 'Failed to load enrichment stats');
+}
+
+export async function getEnrichedContacts(jobId: string): Promise<any[]> {
+  return withErrors(() => http.get(`/enrichment-contacts?job_id=${jobId}`), 'Failed to load enriched contacts');
 }

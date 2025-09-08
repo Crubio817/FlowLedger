@@ -11,7 +11,9 @@ const DashboardRoute: React.FC = () => {
       />
       
       <div className="mt-8">
-        Dashboard content coming soon...
+        <div className="content-container p-8">
+          Dashboard content coming soon...
+        </div>
       </div>
     </div>
   );

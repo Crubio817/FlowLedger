@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import logoPng from '../assets/logo.png';
+import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
 import {
   LayoutDashboard,
   BookMarked,
@@ -9,88 +10,449 @@ import {
   StickyNote,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Table,
+  Menu,
+  X,
+  Settings,
+  Shield,
+  BarChart3,
+  Users,
+  Handshake,
+  ClipboardCheck,
+  FileText,
+  GitBranch,
+  Search,
+  MessageSquare,
+  ClipboardList,
+  Zap,
+  TrendingUp,
+  Target,
 } from 'lucide-react';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['clients']));
 
-  const menuItems = [
-    { id: 'dashboard', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'clients', to: '/clients', icon: Users2, label: 'Clients' },
-    { id: 'audits', to: '/audits', icon: StickyNote, label: 'Audits' },
-    { id: 'projects', to: '/clients/engagements', icon: Workflow, label: 'Projects' },
-    { id: 'onboarding', to: '/clients/onboarding', icon: BookMarked, label: 'Onboarding' },
-    { id: 'sipoc', to: '/sipoc', icon: BookMarked, label: 'SIPOC' },
-    { id: 'interviews', to: '/interviews', icon: Users2, label: 'Interviews' },
-    { id: 'process-maps', to: '/process-maps', icon: Workflow, label: 'Process Maps' },
-    { id: 'findings', to: '/findings', icon: StickyNote, label: 'Findings' },
-    { id: 'templates', to: '/templates', icon: BookMarked, label: 'Templates' },
-    { id: 'table-demo', to: '/table-demo', icon: Table, label: 'Table Demo' },
+  // Toggle section expansion
+  const toggleSection = (sectionId: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionId)) {
+      newExpanded.delete(sectionId);
+    } else {
+      newExpanded.add(sectionId);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  // Check if we're on mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024; // lg breakpoint
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsCollapsed(true);
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isMobile && isMobileMenuOpen) {
+        const sidebar = document.getElementById('mobile-sidebar');
+        if (sidebar && !sidebar.contains(event.target as Node)) {
+          setIsMobileMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMobile, isMobileMenuOpen]);
+
+    const menuItems = [
+    { icon: BarChart3, text: 'Dashboard', href: '/dashboard' },
+    { icon: Zap, text: 'Modules', href: '/modules' },
+    { 
+      icon: TrendingUp, 
+      text: 'Workstream', 
+      href: '/workstream',
+      type: 'expandable' as const,
+      children: [
+        { icon: BarChart3, text: 'Today Panel', href: '/workstream/today' },
+        { icon: TrendingUp, text: 'Signals', href: '/workstream/signals' },
+        { icon: Users, text: 'Candidates', href: '/workstream/candidates' },
+        { icon: Target, text: 'Pursuits', href: '/workstream/pursuits' }
+      ]
+    },
+    { 
+      icon: Users, 
+      text: 'Clients', 
+      href: '/clients',
+      type: 'expandable' as const,
+      children: [
+        { icon: Search, text: 'Client Finder', href: '/client-finder' },
+        { icon: ClipboardList, text: 'Onboarding', href: '/clients/onboarding' }
+      ]
+    },
+    { 
+      icon: Handshake, 
+      text: 'Engagements', 
+      href: '/clients/engagements',
+      type: 'expandable' as const,
+      children: [
+        { 
+          icon: ClipboardCheck, 
+          text: 'Audits', 
+          href: '/audits',
+          type: 'expandable' as const,
+          children: [
+            { icon: FileText, text: 'Templates', href: '/templates' },
+            { icon: GitBranch, text: 'Process Maps', href: '/process-maps' },
+            { icon: Search, text: 'Findings', href: '/findings' },
+            { icon: MessageSquare, text: 'Interviews', href: '/interviews' }
+          ]
+        }
+      ]
+    },
   ];
 
   return (
     <>
-      {/* Spacer to reserve collapsed rail width so workspace doesn't shift */}
-      <div className="w-20 shrink-0" aria-hidden="true" />
-      {/* Fixed overlay sidebar; expands over workspace smoothly */}
+      {/* Mobile Menu Button */}
+      {isMobile && (
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="fixed top-4 left-4 z-50 p-2 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800/50 rounded-lg shadow-lg lg:hidden"
+        >
+          {isMobileMenuOpen ? (
+            <X className="w-5 h-5 text-zinc-300" />
+          ) : (
+            <Menu className="w-5 h-5 text-zinc-300" />
+          )}
+        </button>
+      )}
+
+      {/* Mobile Overlay */}
+      {isMobile && isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden" />
+      )}
+
+      {/* Spacer to reserve collapsed rail width so workspace doesn't shift - only on desktop */}
+      {!isMobile && <div className="w-20 shrink-0" aria-hidden="true" />}
+      
+      {/* Sidebar */}
       <div
-        className={`${isCollapsed ? 'w-20' : 'w-64'} fixed left-0 top-0 z-40 bg-zinc-950 border-r border-zinc-800 flex flex-col shadow-2xl transition-[width] duration-300 ease-out`}
-        style={{ minHeight: '100vh', overflow: 'hidden', willChange: 'width' }}
-        onMouseEnter={() => isCollapsed && setIsCollapsed(false)}
-        onMouseLeave={() => !isCollapsed && setIsCollapsed(true)}
+        id="mobile-sidebar"
+        className={`${
+          isMobile 
+            ? `fixed left-0 top-0 z-50 w-80 transform transition-transform duration-300 ease-out ${
+                isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+              }`
+            : `${isCollapsed ? 'w-20' : 'w-64'} fixed left-0 top-0 z-40 transition-[width] duration-300 ease-out`
+        } bg-zinc-950 border-r border-zinc-800 flex flex-col shadow-2xl`}
+        style={{ minHeight: '100vh', overflow: 'hidden', willChange: isMobile ? 'transform' : 'width' }}
+        onMouseEnter={() => !isMobile && isCollapsed && setIsCollapsed(false)}
+        onMouseLeave={() => !isMobile && !isCollapsed && setIsCollapsed(true)}
       >
-      {/* Header */}
-      <div className={`border-b border-zinc-800 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 pt-4 pb-4`}>
-        <div className={`flex items-center space-x-3 ${isCollapsed ? 'justify-center' : ''}`}> 
-          <img src={logoPng} alt="FlowLedger" className="w-10 h-10 rounded" />
-          {!isCollapsed && (
-            <span className="text-white font-semibold text-lg tracking-wide">FlowLedger</span>
+        {/* Header */}
+        <div className={`border-b border-zinc-800 flex items-center ${
+          isMobile ? 'justify-between px-4 pt-4 pb-4' 
+          : isCollapsed ? 'justify-center px-4 pt-4 pb-4' 
+          : 'justify-between px-4 pt-4 pb-4'
+        }`}>
+          <div className={`flex items-center space-x-3 ${
+            !isMobile && isCollapsed ? 'justify-center' : ''
+          }`}> 
+            <img src={logoPng} alt="FlowLedger" className="w-10 h-10 rounded" />
+            {(isMobile || !isCollapsed) && (
+              <span className="text-white font-semibold text-lg tracking-wide">FlowLedger</span>
+            )}
+          </div>
+          {isMobile && (
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-1 text-zinc-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           )}
         </div>
-      </div>
-  {/* Menu Items */}
-  <nav className={`flex-1 p-4 space-y-2 ${isCollapsed ? 'overflow-hidden' : 'overflow-y-auto scrollbar-hide'}`}>
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.id}
-              to={item.to}
-              title={item.label}
-              className={({ isActive }) => `w-full flex items-center ${
-                isCollapsed ? 'justify-center' : 'justify-start'
-              } px-3 py-3 rounded-xl transition-all duration-200 group relative ${
-                isActive 
-                  ? 'bg-[#4997D0] bg-opacity-10 text-[#4997D0] shadow-lg shadow-[#4997D0]/10' 
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-              }`}
-            >
-              {({ isActive }) => (
-                <>
-                  <Icon 
-                    size={20} 
-                    className={`${isActive ? 'text-[#4997D0]' : 'text-zinc-400 group-hover:text-white'} transition-colors`}
-                  />
-                  {!isCollapsed && (
-                    <span className="ml-3 font-medium transition-opacity duration-200 ease-out">{item.label}</span>
-                  )}
-                  {/* Tooltip for collapsed state, only show if not active */}
-                  {isCollapsed && !isActive && (
-                    <div className="fixed left-20 top-auto px-2 py-1 bg-zinc-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[9999] border border-zinc-700" style={{marginTop: '-8px'}}>
-                      {item.label}
+
+        {/* Menu Items */}
+        <nav className={`flex-1 p-4 space-y-2 ${
+          isMobile || !isCollapsed ? 'overflow-y-auto scrollbar-hide' : 'overflow-hidden'
+        }`}>
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isExpanded = expandedSections.has(item.text);
+            
+            if (item.type === 'expandable') {
+              return (
+                <div key={item.text}>
+                  {/* Main expandable item */}
+                  <div className="flex">
+                    <NavLink
+                      to={item.href}
+                      title={item.text}
+                      onClick={() => isMobile && setIsMobileMenuOpen(false)}
+                      className={({ isActive }) => `flex-1 flex items-center ${
+                        !isMobile && isCollapsed ? 'justify-center' : 'justify-start'
+                      } px-3 py-3 rounded-xl transition-all duration-200 group relative ${
+                        isActive 
+                          ? 'bg-[#4997D0] bg-opacity-10 text-[#4997D0] shadow-lg shadow-[#4997D0]/10' 
+                          : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+                      }`}
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <Icon 
+                            size={20} 
+                            className={`${isActive ? 'text-[#4997D0]' : 'text-zinc-400 group-hover:text-white'} transition-colors`}
+                          />
+                          {(isMobile || !isCollapsed) && (
+                            <span className="ml-3 font-medium transition-opacity duration-200 ease-out">{item.text}</span>
+                          )}
+                          {/* Tooltip for collapsed state */}
+                          {!isMobile && isCollapsed && !isActive && (
+                            <div className="fixed left-20 top-auto px-2 py-1 bg-zinc-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[9999] border border-zinc-700" style={{marginTop: '-8px'}}>
+                              {item.text}
+                            </div>
+                          )}
+                          {/* Active indicator */}
+                          {isActive && (
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8" style={{backgroundColor: '#4997D0', borderRadius: '9999px', boxShadow: '0 0 8px #4997D0'}}></div>
+                          )}
+                        </>
+                      )}
+                    </NavLink>
+                    {/* Expand/collapse button */}
+                    {(isMobile || !isCollapsed) && item.children && (
+                      <button
+                        onClick={() => toggleSection(item.text)}
+                        className="px-2 py-3 text-zinc-400 hover:text-white transition-colors"
+                      >
+                        {isExpanded ? (
+                          <ChevronUp size={16} />
+                        ) : (
+                          <ChevronDown size={16} />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Children items */}
+                  {(isMobile || !isCollapsed) && item.children && isExpanded && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {item.children.map((child) => {
+                        const ChildIcon = child.icon;
+                        const isChildExpanded = expandedSections.has(child.text);
+                        
+                        if ('type' in child && child.type === 'expandable') {
+                          return (
+                            <div key={child.text}>
+                              {/* Nested expandable item */}
+                              <div className="flex">
+                                <NavLink
+                                  to={child.href}
+                                  title={child.text}
+                                  onClick={() => isMobile && setIsMobileMenuOpen(false)}
+                                  className={({ isActive }) => `flex-1 flex items-center justify-start px-3 py-2 rounded-lg transition-all duration-200 group relative ${
+                                    isActive 
+                                      ? 'bg-[#4997D0] bg-opacity-10 text-[#4997D0] shadow-lg shadow-[#4997D0]/10' 
+                                      : 'text-zinc-500 hover:text-white hover:bg-zinc-800/30'
+                                  }`}
+                                >
+                                  {({ isActive }) => (
+                                    <>
+                                      <ChildIcon 
+                                        size={16} 
+                                        className={`${isActive ? 'text-[#4997D0]' : 'text-zinc-500 group-hover:text-white'} transition-colors`}
+                                      />
+                                      <span className="ml-3 font-medium text-sm transition-opacity duration-200 ease-out">{child.text}</span>
+                                      {/* Active indicator for children */}
+                                      {isActive && (
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6" style={{backgroundColor: '#4997D0', borderRadius: '9999px', boxShadow: '0 0 8px #4997D0'}}></div>
+                                      )}
+                                    </>
+                                  )}
+                                </NavLink>
+                                <button
+                                  className="flex items-center justify-center p-2 text-zinc-400 hover:text-white transition-colors"
+                                  onClick={() => toggleSection(child.text)}
+                                >
+                                  {isChildExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                </button>
+                              </div>
+                              
+                              {/* Nested children */}
+                              {isChildExpanded && 'children' in child && child.children && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                  {'children' in child && child.children && child.children.map((grandChild: any) => {
+                                    const GrandChildIcon = grandChild.icon;
+                                    return (
+                                      <NavLink
+                                        key={grandChild.text}
+                                        to={grandChild.href}
+                                        title={grandChild.text}
+                                        onClick={() => isMobile && setIsMobileMenuOpen(false)}
+                                        className={({ isActive }) => `w-full flex items-center justify-start px-3 py-2 rounded-lg transition-all duration-200 group relative ${
+                                          isActive 
+                                            ? 'bg-[#4997D0] bg-opacity-10 text-[#4997D0] shadow-lg shadow-[#4997D0]/10' 
+                                            : 'text-zinc-400 hover:text-white hover:bg-zinc-800/20'
+                                        }`}
+                                      >
+                                        {({ isActive }) => (
+                                          <>
+                                            <GrandChildIcon 
+                                              size={14} 
+                                              className={`${isActive ? 'text-[#4997D0]' : 'text-zinc-400 group-hover:text-white'} transition-colors`}
+                                            />
+                                            <span className="ml-3 font-medium text-xs transition-opacity duration-200 ease-out">{grandChild.text}</span>
+                                            {/* Active indicator for grandchildren */}
+                                            {isActive && (
+                                              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5" style={{backgroundColor: '#4997D0', borderRadius: '9999px', boxShadow: '0 0 8px #4997D0'}}></div>
+                                            )}
+                                          </>
+                                        )}
+                                      </NavLink>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        } else {
+                          // Regular child item
+                          return (
+                            <NavLink
+                              key={child.text}
+                              to={child.href}
+                              title={child.text}
+                              onClick={() => isMobile && setIsMobileMenuOpen(false)}
+                              className={({ isActive }) => `w-full flex items-center justify-start px-3 py-2 rounded-lg transition-all duration-200 group relative ${
+                                isActive 
+                                  ? 'bg-[#4997D0] bg-opacity-10 text-[#4997D0] shadow-lg shadow-[#4997D0]/10' 
+                                  : 'text-zinc-500 hover:text-white hover:bg-zinc-800/30'
+                              }`}
+                            >
+                              {({ isActive }) => (
+                                <>
+                                  <ChildIcon 
+                                    size={16} 
+                                    className={`${isActive ? 'text-[#4997D0]' : 'text-zinc-500 group-hover:text-white'} transition-colors`}
+                                  />
+                                  <span className="ml-3 font-medium text-sm transition-opacity duration-200 ease-out">{child.text}</span>
+                                  {/* Active indicator for children */}
+                                  {isActive && (
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6" style={{backgroundColor: '#4997D0', borderRadius: '9999px', boxShadow: '0 0 8px #4997D0'}}></div>
+                                  )}
+                                </>
+                              )}
+                            </NavLink>
+                          );
+                        }
+                      })}
                     </div>
                   )}
-                  {/* Active indicator */}
-                  {isActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8" style={{backgroundColor: '#4997D0', borderRadius: '9999px', boxShadow: '0 0 8px #4997D0'}}></div>
+                </div>
+              );
+            } else {
+              // Regular menu item
+              return (
+                <NavLink
+                  key={item.text}
+                  to={item.href}
+                  title={item.text}
+                  onClick={() => isMobile && setIsMobileMenuOpen(false)}
+                  className={({ isActive }) => `w-full flex items-center ${
+                    !isMobile && isCollapsed ? 'justify-center' : 'justify-start'
+                  } px-3 py-3 rounded-xl transition-all duration-200 group relative ${
+                    isActive 
+                      ? 'bg-[#4997D0] bg-opacity-10 text-[#4997D0] shadow-lg shadow-[#4997D0]/10' 
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+                  }`}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon 
+                        size={20} 
+                        className={`${isActive ? 'text-[#4997D0]' : 'text-zinc-400 group-hover:text-white'} transition-colors`}
+                      />
+                      {(isMobile || !isCollapsed) && (
+                        <span className="ml-3 font-medium transition-opacity duration-200 ease-out">{item.text}</span>
+                      )}
+                      {/* Tooltip for collapsed state, only show if not active and not mobile */}
+                      {!isMobile && isCollapsed && !isActive && (
+                        <div className="fixed left-20 top-auto px-2 py-1 bg-zinc-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[9999] border border-zinc-700" style={{marginTop: '-8px'}}>
+                          {item.text}
+                        </div>
+                      )}
+                      {/* Active indicator */}
+                      {isActive && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8" style={{backgroundColor: '#4997D0', borderRadius: '9999px', boxShadow: '0 0 8px #4997D0'}}></div>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
+                </NavLink>
+              );
+            }
+          })}
+          
+          {/* Quick Module Access */}
+          {(isMobile || !isCollapsed) && (
+            <div className="mt-4 pt-4 border-t border-zinc-700/50">
+              <QuickModuleAccess />
+            </div>
+          )}
+        </nav>
+
+        {/* Settings at bottom */}
+        <div className="p-4 border-t border-zinc-700">
+          <NavLink
+            to="/settings"
+            title="Settings"
+            onClick={() => isMobile && setIsMobileMenuOpen(false)}
+            className={({ isActive }) => `w-full flex items-center ${
+              !isMobile && isCollapsed ? 'justify-center' : 'justify-start'
+            } px-3 py-3 rounded-xl transition-all duration-200 group relative ${
+              isActive 
+                ? 'bg-[#4997D0] bg-opacity-10 text-[#4997D0] shadow-lg shadow-[#4997D0]/10' 
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+            }`}
+          >
+            {({ isActive }) => (
+              <>
+                <Settings 
+                  size={20} 
+                  className={`${isActive ? 'text-[#4997D0]' : 'text-zinc-400 group-hover:text-white'} transition-colors`}
+                />
+                {(isMobile || !isCollapsed) && (
+                  <span className="ml-3 font-medium transition-opacity duration-200 ease-out">Settings</span>
+                )}
+                {/* Tooltip for collapsed state */}
+                {!isMobile && isCollapsed && !isActive && (
+                  <div className="fixed left-20 top-auto px-2 py-1 bg-zinc-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[9999] border border-zinc-700" style={{marginTop: '-8px'}}>
+                    Settings
+                  </div>
+                )}
+                {/* Active indicator */}
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8" style={{backgroundColor: '#4997D0', borderRadius: '9999px', boxShadow: '0 0 8px #4997D0'}}></div>
+                )}
+              </>
+            )}
+          </NavLink>
+        </div>
       {/* Bottom section removed per request */}
       </div>
     </>

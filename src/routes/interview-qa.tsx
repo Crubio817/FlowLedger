@@ -68,17 +68,19 @@ export default function InterviewQA() {
         <div className="text-sm">{progress}% complete</div>
       </header>
 
-      <div className="grid gap-4">
-        {DEFAULT_QUESTIONS.map(q => (
-          <QAEditor
-            key={q.question_id}
-            interviewId={interviewId}
-            item={q}
-            existing={rows[q.question_id]}
-    onDirty={() => setDirty(true)}
-    onSaved={(resp) => { setRows(prev => ({ ...prev, [q.question_id]: resp })); setDirty(false); savedToast(toast.success); }}
-          />
-        ))}
+      <div className="content-container p-6">
+        <div className="grid gap-4">
+          {DEFAULT_QUESTIONS.map(q => (
+            <QAEditor
+              key={q.question_id}
+              interviewId={interviewId}
+              item={q}
+              existing={rows[q.question_id]}
+      onDirty={() => setDirty(true)}
+      onSaved={(resp) => { setRows(prev => ({ ...prev, [q.question_id]: resp })); setDirty(false); savedToast(toast.success); }}
+            />
+          ))}
+        </div>
       </div>
     </main>
   );
@@ -118,7 +120,7 @@ function QAEditor({
   }, [val, tags, truth]);
 
   return (
-    <div className="rounded-2xl border p-4 space-y-2">
+    <div className="card-container">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">{item.prompt}</h3>
         <div className="text-xs opacity-70">{saving ? 'Saving…' : existing?.created_utc ? new Date(existing.created_utc).toLocaleString() : ''}</div>

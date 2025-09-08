@@ -2,6 +2,9 @@ import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 // Use the custom matte sidebar (more consistent with our theme)
 import CollapsibleSidebar from './components/collapsible-sidebar.tsx';
+// Replace floating action with the new split button
+import SplitButton from './components/simple-split-button.tsx';
+import { GlobalModuleLauncher } from './components/GlobalModuleLauncher.tsx';
 import { useAppStore } from './store/useAppStore.ts';
 import './styles/theme.css';
 import { Loading } from './components/Loading.tsx';
@@ -24,6 +27,8 @@ export const AppLayout: React.FC = () => {
   return (
     <div className="app-shell">
       <CollapsibleSidebar />
+      <SplitButton />
+      <GlobalModuleLauncher />
       <div
         className="workspace"
         style={{
