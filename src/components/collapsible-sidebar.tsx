@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import logoPng from '../assets/logo.png';
 import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
-import {
+  import {
   LayoutDashboard,
   BookMarked,
   Users2,
@@ -29,9 +29,11 @@ import {
   Zap,
   TrendingUp,
   Target,
-} from 'lucide-react';
-
-const Sidebar = () => {
+  MessageCircle,
+  Phone,
+  UserCheck,
+  UserPlus,
+} from 'lucide-react';const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -94,6 +96,7 @@ const Sidebar = () => {
         { icon: Target, text: 'Pursuits', href: '/workstream/pursuits' }
       ]
     },
+    { icon: UserPlus, text: 'People', href: '/people' },
     { 
       icon: Users, 
       text: 'Clients', 
@@ -122,6 +125,18 @@ const Sidebar = () => {
             { icon: MessageSquare, text: 'Interviews', href: '/interviews' }
           ]
         }
+      ]
+    },
+    { 
+      icon: MessageCircle, 
+      text: 'Communication Hub', 
+      href: '/comms',
+      type: 'expandable' as const,
+      children: [
+        { icon: MessageCircle, text: 'Threads', href: '/comms/threads' },
+        { icon: Search, text: 'Advanced Search', href: '/comms/search' },
+        { icon: FileText, text: 'Email Templates', href: '/comms/templates' },
+        { icon: UserCheck, text: 'Principals', href: '/settings/principals' }
       ]
     },
   ];

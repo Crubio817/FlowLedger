@@ -31,6 +31,15 @@ const FlowDemoRoute = lazy(()=> import('./routes/flow-demo.tsx'));
 const TableDemoRoute = lazy(()=> import('./routes/table-demo.tsx'));
 const SettingsRoute = lazy(()=> import('./routes/settings.tsx'));
 const WorkstreamRoute = lazy(()=> import('./routes/workstream.tsx'));
+const CommsThreadsRoute = lazy(()=> import('./routes/comms-threads.tsx'));
+const CommsThreadDetailRoute = lazy(()=> import('./routes/comms-thread-detail.tsx'));
+const CommsSearchRoute = lazy(()=> import('./routes/comms-search.tsx'));
+const CommsTemplatesRoute = lazy(()=> import('./routes/comms-templates.tsx'));
+const SettingsPrincipalsRoute = lazy(()=> import('./routes/settings-principals.tsx'));
+const PeopleRoute = lazy(()=> import('./routes/people.tsx'));
+const EngagementsRoute = lazy(()=> import('./routes/engagements.tsx'));
+const BillingRoute = lazy(()=> import('./routes/billing.tsx'));
+const AutomationRoute = lazy(()=> import('./routes/automation.tsx'));
 
 const router = createBrowserRouter([
   {
@@ -61,6 +70,15 @@ const router = createBrowserRouter([
   { path: 'audits', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><AuditsListRoute /></Suspense> },
   { path: 'audits/:auditId', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><AuditDetailRoute /></Suspense> },
   { path: 'settings', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><SettingsRoute /></Suspense> },
+  { path: 'settings/principals', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><SettingsPrincipalsRoute /></Suspense> },
+  { path: 'comms/threads', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><CommsThreadsRoute /></Suspense> },
+  { path: 'comms/threads/:threadId', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><CommsThreadDetailRoute /></Suspense> },
+  { path: 'comms/search', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><CommsSearchRoute /></Suspense> },
+  { path: 'comms/templates', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><CommsTemplatesRoute /></Suspense> },
+  { path: 'people', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><PeopleRoute /></Suspense> },
+  { path: 'engagements', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><EngagementsRoute /></Suspense> },
+  { path: 'billing', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><BillingRoute /></Suspense> },
+  { path: 'automation', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><AutomationRoute /></Suspense> },
   { path: 'flow-demo', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><FlowDemoRoute /></Suspense> },
   { path: 'table-demo', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><TableDemoRoute /></Suspense> },
   { path: 'workstream/*', element: <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}><WorkstreamRoute /></Suspense> },

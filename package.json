@@ -1,5 +1,6 @@
 {
   "name": "flowledger-interface",
+  "description": "Modern React + TypeScript interface for internal audit and workstream operations with Communication Hub",
   "private": true,
   "version": "0.1.0",
   "type": "module",

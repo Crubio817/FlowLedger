@@ -1,13 +1,32 @@
 # FlowLedger
 
-[![CI/CD](https://github.com/Crubio817/FlowLedger/actions/workflows/azure-static-web-apps.yml/badge.svg)](https://github.com/Crubio817/FlowLedger/actions/workflows/azure-static-web-apps.yml)
+[![CI/CD](https://github.com/Crubio817/FlowLedger/actions/workflows/azure-static-web-apps.ymlKey files:
+- `src/services/workstream.api.ts`: Client for signals/candidates/pursuits/today
+- `src/services/workstream.types.ts`: Types, helpers (`calculateSlaStatus`, color helpers)
+- `src/components/TodayPanel.tsx`: UI for today's priorities
+- Routes: `src/routes/workstream-*.tsx` and `src/routes/workstream.tsx`
 
-FlowLedger is a modern React + TypeScript interface for internal audit and workstream operations. It centralizes SIPOC, interviews, process maps, findings, and a full Workstream (Signals → Candidates → Pursuits) pipeline with a unified Today Panel.
+## Communication Hub Overview
+
+- **Identity Management**: Multi-provider principals (people, services, teams)
+- **Threaded Communications**: Organized message threads with status tracking
+- **Real-time Updates**: Optimistic UI with proper error handling
+- **Integration**: Links to workstream entities and client records
+- See `COMMS_HUB_INTEGRATION.md` for detailed architecture and usage.
+
+Key files:
+- `src/services/api.ts`: Communication and principal API functions
+- `src/routes/comms-threads.tsx`: Thread listing and management
+- `src/routes/comms-thread-detail.tsx`: Individual thread conversations
+- `src/routes/settings-principals.tsx`: Identity provider managemente.svg)](https://github.com/Crubio817/FlowLedger/actions/workflows/azure-static-web-apps.yml)
+
+FlowLedger is a modern React + TypeScript interface for internal audit and workstream operations. It centralizes SIPOC, interviews, process maps, findings, and a full Workstream (Signals → Candidates → Pursuits) pipeline with a unified Today Panel and Communication Hub.
 
 Built with Vite and Tailwind CSS, it uses a component-first architecture, lazy-loaded routes, generated API types, and a pragmatic design system.
 
 **Quick Links**
 - `WORKSTREAM_README.md`: Workstream v2.1 architecture and flows
+- `COMMS_HUB_INTEGRATION.md`: Communication Hub and identity management
 - `ADVANCED_TABLE.md`: Data table capabilities and usage
 - `MODAL_DESIGN_PATTERN.md`: Modern modal design guidelines
 
@@ -15,6 +34,7 @@ Built with Vite and Tailwind CSS, it uses a component-first architecture, lazy-l
 
 - **Dashboard:** KPIs and recent activity with a grid-themed workspace.
 - **Workstream:** Signals, Candidates, Pursuits, Today Panel, SLA badges.
+- **Communication Hub:** Multi-provider identity management and threaded communications.
 - **SIPOC:** End-to-end SIPOC editing with autosave.
 - **Interviews:** Schedule, track Q&A, and manage artifacts.
 - **Process Maps:** File uploads via presigned URLs.
@@ -89,6 +109,8 @@ Regenerate API types when the backend schema changes:
 Useful routes (see `src/main.tsx`):
 - `/dashboard` – overview and KPIs
 - `/clients`, `/clients/onboarding`, `/clients/engagements`
+- `/comms/threads` – communication thread management
+- `/settings/principals` – identity provider management
 - `/sipoc`, `/interviews`, `/interview-qa`, `/process-maps`, `/findings`
 - `/modules`, `/modules/:moduleKey`
 - `/workstream/*` – signals, candidates, pursuits, today panel
@@ -154,6 +176,7 @@ Key files:
 ## Additional Docs
 
 - `WORKSTREAM_README.md`: Workstream module deep dive
+- `COMMS_HUB_INTEGRATION.md`: Communication Hub feature guide and implementation
 - `ADVANCED_TABLE.md`: AdvancedTable feature guide
 - `MODAL_DESIGN_PATTERN.md`: Modal UI conventions
 - `WORKSTREAM_*` routes and components for examples

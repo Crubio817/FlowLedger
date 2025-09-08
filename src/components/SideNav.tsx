@@ -11,6 +11,9 @@ import {
   StickyNote,
   ChevronLeft,
   ChevronRight,
+  Briefcase,
+  CreditCard,
+  Zap,
 } from 'lucide-react';
 
 type LinkItem = { to: string; label: string; icon: React.ReactNode };
@@ -19,6 +22,9 @@ const links: LinkItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { to: '/clients', label: 'Clients', icon: <Users2 size={18} /> },
   { to: '/audits', label: 'Audits', icon: <StickyNote size={18} /> },
+  { to: '/engagements', label: 'Engagements', icon: <Briefcase size={18} /> },
+  { to: '/billing', label: 'Billing', icon: <CreditCard size={18} /> },
+  { to: '/automation', label: 'Automation', icon: <Zap size={18} /> },
   { to: '/clients/engagements', label: 'Projects', icon: <Workflow size={18} /> },
   { to: '/clients/onboarding', label: 'Onboarding', icon: <BookMarked size={18} /> },
   { to: '/sipoc', label: 'SIPOC', icon: <BookMarked size={18} /> },

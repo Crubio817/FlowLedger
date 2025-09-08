@@ -949,3 +949,581 @@ export async function getEnrichmentStats(clientId?: number): Promise<EnrichmentS
 export async function getEnrichedContacts(jobId: string): Promise<any[]> {
   return withErrors(() => http.get(`/enrichment-contacts?job_id=${jobId}`), 'Failed to load enriched contacts');
 }
+
+// ================================
+// IDENTITY & COMMS HUB API
+// ================================
+
+// Principal (Identity) Management Types
+export type Principal = {
+  principal_id: number;
+  org_id: number;
+  principal_type: "person" | "service" | "team";
+  display_name?: string;
+  primary_email?: string;
+  is_internal: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+// Communications Types
+export type CommsThread = {
+  thread_id: number;
+  org_id: number;
+  mailbox_id: number;
+  channel: "email" | "ticket";
+  subject: string;
+  status: "active" | "pending" | "resolved" | "escalated" | "on_hold" | "reopened";
+  process_state: "triage" | "in_processing" | "queued" | "done" | "archived";
+  assigned_principal_id?: number;
+  client_id?: number;
+  sla_rule_id?: number;
+  first_msg_at?: string;
+  last_msg_at: string;
+  internet_conv_id?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommsMessage = {
+  message_id: number;
+  org_id: number;
+  thread_id: number;
+  direction: "in" | "out";
+  provider: "graph" | "zammad";
+  provider_msg_id: string;
+  sent_at: string;
+  snippet?: string;
+  body_blob_url?: string;
+  has_attachments: boolean;
+  created_at: string;
+};
+
+export type CommsAttachment = {
+  attachment_id: number;
+  org_id: number;
+  message_id: number;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  blob_url?: string;
+  created_at: string;
+};
+
+// ================================
+// PRINCIPALS API
+// ================================
+
+export async function listPrincipals(filters: {
+  org_id?: number;
+  principal_type?: "person" | "service" | "team";
+  is_internal?: boolean;
+  is_active?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+} = {}): Promise<{ data: Principal[]; meta?: PageMeta }> {
+  const params = new URLSearchParams();
+  if (filters.org_id) params.set('org_id', filters.org_id.toString());
+  if (filters.principal_type) params.set('principal_type', filters.principal_type);
+  if (filters.is_internal !== undefined) params.set('is_internal', filters.is_internal.toString());
+  if (filters.is_active !== undefined) params.set('is_active', filters.is_active.toString());
+  if (filters.search) params.set('search', filters.search);
+  if (filters.page) params.set('page', filters.page.toString());
+  if (filters.limit) params.set('limit', filters.limit.toString());
+
+  return withErrors(
+    () => http.get<{ data: Principal[]; meta?: PageMeta }>(`/principals?${params.toString()}`),
+    'Failed to load principals'
+  );
+}
+
+export async function getPrincipal(principalId: number): Promise<Principal> {
+  return withErrors(
+    () => http.get<Principal>(`/principals/${principalId}`),
+    'Failed to load principal'
+  );
+}
+
+export async function createPrincipal(payload: {
+  principal_type: "person" | "service" | "team";
+  display_name?: string;
+  primary_email?: string;
+  is_internal?: boolean;
+  is_active?: boolean;
+}): Promise<Principal> {
+  return withErrors(
+    () => http.post<Principal>('/principals', payload),
+    'Failed to create principal'
+  );
+}
+
+export async function updatePrincipal(principalId: number, payload: Partial<Principal>): Promise<Principal> {
+  return withErrors(
+    () => http.put<Principal>(`/principals/${principalId}`, payload),
+    'Failed to update principal'
+  );
+}
+
+export async function deletePrincipal(principalId: number): Promise<{ ok: true }> {
+  return withErrors(
+    () => http.del<{ ok: true }>(`/principals/${principalId}`),
+    'Failed to delete principal'
+  );
+}
+
+// ================================
+// COMMUNICATIONS API
+// ================================
+
+export async function listCommsThreads(filters: {
+  org_id?: number;
+  status?: CommsThread['status'];
+  process_state?: CommsThread['process_state'];
+  assigned_principal_id?: number;
+  client_id?: number;
+  channel?: "email" | "ticket";
+  page?: number;
+  limit?: number;
+} = {}): Promise<{ data: CommsThread[]; meta?: PageMeta }> {
+  const params = new URLSearchParams();
+  if (filters.org_id) params.set('org_id', filters.org_id.toString());
+  if (filters.status) params.set('status', filters.status);
+  if (filters.process_state) params.set('process_state', filters.process_state);
+  if (filters.assigned_principal_id) params.set('assigned_principal_id', filters.assigned_principal_id.toString());
+  if (filters.client_id) params.set('client_id', filters.client_id.toString());
+  if (filters.channel) params.set('channel', filters.channel);
+  if (filters.page) params.set('page', filters.page.toString());
+  if (filters.limit) params.set('limit', filters.limit.toString());
+
+  return withErrors(
+    () => http.get<{ data: CommsThread[]; meta?: PageMeta }>(`/comms/threads?${params.toString()}`),
+    'Failed to load communication threads'
+  );
+}
+
+export async function getCommsThread(threadId: number): Promise<CommsThread & { messages?: CommsMessage[] }> {
+  return withErrors(
+    () => http.get<CommsThread & { messages?: CommsMessage[] }>(`/comms/threads/${threadId}`),
+    'Failed to load communication thread'
+  );
+}
+
+export async function updateCommsThread(threadId: number, payload: {
+  status?: CommsThread['status'];
+  process_state?: CommsThread['process_state'];
+  assigned_principal_id?: number;
+  client_id?: number;
+}): Promise<CommsThread> {
+  return withErrors(
+    () => http.put<CommsThread>(`/comms/threads/${threadId}`, payload),
+    'Failed to update communication thread'
+  );
+}
+
+export async function replyToCommsThread(threadId: number, payload: {
+  body: string;
+  attachments?: File[];
+}): Promise<CommsMessage> {
+  return withErrors(
+    () => http.post<CommsMessage>(`/comms/threads/${threadId}/reply`, payload),
+    'Failed to reply to communication thread'
+  );
+}
+
+export async function linkCommsThreadToWorkItem(threadId: number, payload: {
+  work_item_type: "audit" | "client" | "project";
+  work_item_id: number;
+}): Promise<{ ok: true }> {
+  return withErrors(
+    () => http.post<{ ok: true }>(`/comms/threads/${threadId}/link`, payload),
+    'Failed to link communication thread to work item'
+  );
+}
+
+export async function saveCommsAttachmentAsDocument(attachmentId: number, payload: {
+  document_name?: string;
+  client_id?: number;
+  audit_id?: number;
+}): Promise<{ document_id: number }> {
+  return withErrors(
+    () => http.post<{ document_id: number }>(`/comms/attachments/${attachmentId}/save-as-doc`, payload),
+    'Failed to save attachment as document'
+  );
+}
+
+// ================================
+// COMMS HELPER FUNCTIONS
+// ================================
+
+export function getThreadStatusColor(status: CommsThread['status']): string {
+  switch (status) {
+    case 'active': return 'text-blue-400';
+    case 'pending': return 'text-amber-400';
+    case 'resolved': return 'text-emerald-400';
+    case 'escalated': return 'text-red-400';
+    case 'on_hold': return 'text-zinc-400';
+    case 'reopened': return 'text-orange-400';
+    default: return 'text-zinc-400';
+  }
+}
+
+export function getProcessStateColor(processState: CommsThread['process_state']): string {
+  switch (processState) {
+    case 'triage': return 'text-amber-400';
+    case 'in_processing': return 'text-blue-400';
+    case 'queued': return 'text-purple-400';
+    case 'done': return 'text-emerald-400';
+    case 'archived': return 'text-zinc-400';
+    default: return 'text-zinc-400';
+  }
+}
+
+export function canTransitionThreadStatus(
+  currentStatus: CommsThread['status'], 
+  newStatus: CommsThread['status']
+): boolean {
+  const transitions: Record<CommsThread['status'], CommsThread['status'][]> = {
+    active: ['pending', 'resolved', 'escalated', 'on_hold'],
+    pending: ['active', 'resolved', 'escalated'],
+    escalated: ['active', 'resolved', 'on_hold'],
+    on_hold: ['active', 'escalated', 'resolved'],
+    resolved: ['reopened'],
+    reopened: ['active', 'resolved', 'escalated', 'on_hold'],
+  };
+  
+  return transitions[currentStatus]?.includes(newStatus) || false;
+}
+
+// ================================
+// ENHANCED COMMUNICATION HUB API
+// ================================
+
+// Enhanced types for new features
+export interface FileUploadSession {
+  session_id: string;
+  filename: string;
+  mime_type: string;
+  total_size_bytes: number;
+  chunk_size: number;
+  total_chunks: number;
+  uploaded_chunks: number;
+  status: 'pending' | 'uploading' | 'completed' | 'failed';
+  blob_url?: string;
+  created_utc: string;
+}
+
+export interface SearchResult {
+  id: number;
+  type: 'thread' | 'message';
+  title: string;
+  content: string;
+  thread_id: number;
+  thread_subject: string;
+  created_utc: string;
+  relevance_score: number;
+  highlights: string[];
+}
+
+export interface EmailTemplate {
+  template_id: number;
+  org_id: number;
+  name: string;
+  template_type: 'general' | 'response' | 'follow_up' | 'proposal';
+  subject_template: string;
+  body_template: string;
+  variables: TemplateVariable[];
+  is_active: boolean;
+  created_utc: string;
+  updated_utc?: string;
+}
+
+export interface TemplateVariable {
+  variable_name: string;
+  variable_type: 'text' | 'number' | 'date' | 'boolean';
+  default_value?: string;
+  description?: string;
+  is_required: boolean;
+}
+
+export interface SearchOptions {
+  type?: 'general' | 'threads' | 'messages';
+  mailbox_id?: number;
+  status?: string;
+  from_date?: string;
+  to_date?: string;
+  page?: number;
+  limit?: number;
+}
+
+// ================================
+// WEBSOCKET API FUNCTIONS
+// ================================
+
+// Register WebSocket connection
+export const registerWebSocketConnection = async (
+  socketId: string,
+  principalId: number,
+  orgId: number
+): Promise<any> => {
+  return withErrors(async () => {
+    const response = await http.post(`/comms/ws/connect?org_id=${orgId}`, {
+      socket_id: socketId,
+      principal_id: principalId,
+      user_agent: navigator.userAgent,
+      ip_address: null // Will be determined server-side
+    });
+    return response;
+  }, 'Failed to register WebSocket connection');
+};
+
+// Unregister WebSocket connection
+export const unregisterWebSocketConnection = async (
+  socketId: string,
+  orgId: number
+): Promise<any> => {
+  return withErrors(async () => {
+    const response = await http.post(`/comms/ws/disconnect?org_id=${orgId}`, {
+      socket_id: socketId
+    });
+    return response;
+  }, 'Failed to unregister WebSocket connection');
+};
+
+// Subscribe to WebSocket updates
+export const subscribeToWebSocketUpdates = async (
+  socketId: string,
+  subscriptionType: string,
+  resourceId?: number,
+  orgId?: number
+): Promise<any> => {
+  return withErrors(async () => {
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId.toString());
+    
+    const response = await http.post(`/comms/ws/subscribe?${params}`, {
+      socket_id: socketId,
+      subscription_type: subscriptionType,
+      resource_id: resourceId
+    });
+    return response;
+  }, 'Failed to subscribe to WebSocket updates');
+};
+
+// ================================
+// FILE UPLOAD API FUNCTIONS
+// ================================
+
+// Initialize file upload session
+export const initializeFileUpload = async (
+  filename: string,
+  mimeType: string,
+  totalSize: number,
+  threadId?: number,
+  principalId?: number,
+  orgId?: number
+): Promise<FileUploadSession> => {
+  return withErrors(async () => {
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId.toString());
+    if (principalId) params.append('principal_id', principalId.toString());
+    
+    const response = await http.post<{ data: FileUploadSession }>(`/comms/upload/init?${params}`, {
+      filename,
+      mime_type: mimeType,
+      total_size_bytes: totalSize,
+      thread_id: threadId
+    });
+    return (response as any).data;
+  }, 'Failed to initialize file upload');
+};
+
+// Upload file chunk
+export const uploadFileChunk = async (
+  sessionId: string,
+  chunkIndex: number,
+  chunkData: string
+): Promise<any> => {
+  return withErrors(async () => {
+    const response = await http.post(`/comms/upload/${sessionId}/chunk`, {
+      chunk_index: chunkIndex,
+      chunk_data: chunkData // Base64 encoded
+    });
+    return response;
+  }, 'Failed to upload file chunk');
+};
+
+// Get upload session status
+export const getUploadStatus = async (sessionId: string): Promise<FileUploadSession> => {
+  return withErrors(async () => {
+    const response = await http.get<{ data: FileUploadSession }>(`/comms/upload/${sessionId}/status`);
+    return (response as any).data;
+  }, 'Failed to get upload status');
+};
+
+// Cancel upload session
+export const cancelUpload = async (sessionId: string): Promise<any> => {
+  return withErrors(async () => {
+    const response = await http.del(`/comms/upload/${sessionId}`);
+    return response;
+  }, 'Failed to cancel upload');
+};
+
+// ================================
+// ADVANCED SEARCH API FUNCTIONS
+// ================================
+
+// Search communications
+export const searchCommunications = async (
+  query: string,
+  options: SearchOptions = {},
+  principalId?: number,
+  orgId?: number
+): Promise<{ data: SearchResult[], meta: any }> => {
+  return withErrors(async () => {
+    const {
+      type = 'general',
+      mailbox_id,
+      status,
+      from_date,
+      to_date,
+      page = 1,
+      limit = 20
+    } = options;
+
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId.toString());
+    if (principalId) params.append('principal_id', principalId.toString());
+    params.append('q', query);
+    params.append('type', type);
+    if (mailbox_id) params.append('mailbox_id', mailbox_id.toString());
+    if (status) params.append('status', status);
+    if (from_date) params.append('from_date', from_date);
+    if (to_date) params.append('to_date', to_date);
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+
+    const response = await http.get(`/comms/search?${params}`);
+    return response as any;
+  }, 'Failed to search communications');
+};
+
+// Save search query
+export const saveSearchQuery = async (
+  query: string,
+  filters: any,
+  principalId?: number,
+  orgId?: number
+): Promise<any> => {
+  return withErrors(async () => {
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId.toString());
+    
+    const response = await http.post(`/comms/search/save?${params}`, {
+      query,
+      filters,
+      principal_id: principalId
+    });
+    return response;
+  }, 'Failed to save search query');
+};
+
+// ================================
+// EMAIL TEMPLATE API FUNCTIONS
+// ================================
+
+// Get all email templates
+export const getEmailTemplates = async (
+  type?: string,
+  isActive?: boolean,
+  orgId?: number
+): Promise<EmailTemplate[]> => {
+  return withErrors(async () => {
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId.toString());
+    if (type) params.append('type', type);
+    if (isActive !== undefined) params.append('is_active', isActive.toString());
+    
+    const response = await http.get<{ data: EmailTemplate[] }>(`/comms/templates?${params}`);
+    return (response as any).data;
+  }, 'Failed to fetch email templates');
+};
+
+// Get specific email template
+export const getEmailTemplate = async (
+  templateId: number,
+  orgId?: number
+): Promise<EmailTemplate> => {
+  return withErrors(async () => {
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId.toString());
+    
+    const response = await http.get<{ data: EmailTemplate }>(`/comms/templates/${templateId}?${params}`);
+    return (response as any).data;
+  }, 'Failed to fetch email template');
+};
+
+// Create new email template
+export const createEmailTemplate = async (
+  template: Omit<EmailTemplate, 'template_id' | 'org_id' | 'created_utc' | 'updated_utc'>,
+  principalId?: number,
+  orgId?: number
+): Promise<EmailTemplate> => {
+  return withErrors(async () => {
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId.toString());
+    if (principalId) params.append('principal_id', principalId.toString());
+    
+    const response = await http.post<{ data: EmailTemplate }>(`/comms/templates?${params}`, template);
+    return (response as any).data;
+  }, 'Failed to create email template');
+};
+
+// Update email template
+export const updateEmailTemplate = async (
+  templateId: number,
+  template: Partial<EmailTemplate>,
+  orgId?: number
+): Promise<EmailTemplate> => {
+  return withErrors(async () => {
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId.toString());
+    
+    const response = await http.put<{ data: EmailTemplate }>(`/comms/templates/${templateId}?${params}`, template);
+    return (response as any).data;
+  }, 'Failed to update email template');
+};
+
+// Delete email template
+export const deleteEmailTemplate = async (
+  templateId: number,
+  orgId?: number
+): Promise<any> => {
+  return withErrors(async () => {
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId.toString());
+    
+    const response = await http.del(`/comms/templates/${templateId}?${params}`);
+    return response;
+  }, 'Failed to delete email template');
+};
+
+// Apply template with variables
+export const applyEmailTemplate = (
+  template: EmailTemplate,
+  variables: Record<string, any>
+): { subject: string; body: string } => {
+  let subject = template.subject_template;
+  let body = template.body_template;
+
+  // Replace variables in subject and body
+  Object.entries(variables).forEach(([key, value]) => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    const stringValue = value?.toString() || '';
+    subject = subject.replace(regex, stringValue);
+    body = body.replace(regex, stringValue);
+  });
+
+  return { subject, body };
+};

@@ -533,6 +533,11 @@ For questions or issues with the Workstream Module:
 - Contact the development team
 - Check the documentation wiki
 
+## 🔗 Related Modules
+
+- **Communication Hub**: See `COMMS_HUB_INTEGRATION.md` for threaded communications and identity management that can integrate with workstream entities
+- **Main Application**: See `README.md` for overall FlowLedger architecture and features
+
 ---
 
 **Built with ❤️ for efficient workstream management**
