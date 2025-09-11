@@ -7,6 +7,7 @@ import { toast } from '../lib/toast.ts';
 import { useUnsavedGuard } from '../hooks/useUnsavedGuard.ts';
 import { savedToast } from '../lib/saveNotifier.ts';
 import { PageTitleEditorial } from '../components/PageTitles.tsx';
+import StandardHeader from '../components/StandardHeader.tsx';
 
 function ensureStrings(arr?: unknown[]): string[] {
   if (!Array.isArray(arr)) return [];
@@ -110,10 +111,10 @@ export default function SipocRoute() {
 
   return (
     <main className="p-6 space-y-6">
-      <PageTitleEditorial
-        eyebrow="Process Analysis"
+      <StandardHeader
         title={`SIPOC — Audit #${auditId}`}
         subtitle="Suppliers, Inputs, Process, Outputs, and Customers analysis framework"
+        color="emerald"
       />
       
       <div className="flex justify-end">

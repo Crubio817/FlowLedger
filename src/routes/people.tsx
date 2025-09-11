@@ -1,15 +1,19 @@
 import React from 'react';
 import PeopleAdvancedTableProduction from '../components/PeopleAdvancedTableProduction.tsx';
 import { PageTitleEditorial } from '../components/PageTitles.tsx';
+import StandardHeader from '../components/StandardHeader.tsx';
 
 export default function PeopleRoute() {
   return (
-    <div className="space-y-6">
-      <PageTitleEditorial
+    <div>
+      <StandardHeader
         title="People Directory"
         subtitle="Production-ready staffing and resource management with AI recommendations"
+        color="emerald"
       />
-      <PeopleAdvancedTableProduction />
+      <div className="p-6">
+        <PeopleAdvancedTableProduction />
+      </div>
     </div>
   );
 }

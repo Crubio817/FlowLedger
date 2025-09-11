@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 // Use the custom matte sidebar (more consistent with our theme)
 import CollapsibleSidebar from './components/collapsible-sidebar.tsx';
-// Replace floating action with the new split button
-import SplitButton from './components/simple-split-button.tsx';
 import { GlobalModuleLauncher } from './components/GlobalModuleLauncher.tsx';
 import { useAppStore } from './store/useAppStore.ts';
 import './styles/theme.css';
@@ -16,6 +14,10 @@ export const AppLayout: React.FC = () => {
   const error = useAppStore(s => s.error);
   const accent = useAppStore(s => s.accent);
   const theme = useAppStore(s => s.theme);
+  const location = useLocation();
+
+  // Workstream pages should have a perfectly flush header (no workspace top padding)
+  const flushHeader = location.pathname.startsWith('/workstream');
   useEffect(() => { init(); }, [init]);
   useEffect(() => {
     document.body.classList.toggle('accent-amber', accent === 'amber');
@@ -27,19 +29,14 @@ export const AppLayout: React.FC = () => {
   return (
     <div className="app-shell">
       <CollapsibleSidebar />
-      <SplitButton />
       <GlobalModuleLauncher />
       <div
         className="workspace"
         style={{
           backgroundColor: '#101010',
-          backgroundImage:
-            'linear-gradient(to right, rgba(255,255,255,0.012) 1px, transparent 1px), ' +
-            'linear-gradient(to bottom, rgba(255,255,255,0.012) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
         }}
       >
-        <main className="workspace-main pt-8">
+  <main className={`workspace-main ${flushHeader ? 'flush-header' : ''}`}>
           {loading && <Loading label="Initializing" />}
           {!loading && error && <div className="text-sm text-red-400" data-testid="error-state">{error}</div>}
           {!loading && !error && <Outlet />}

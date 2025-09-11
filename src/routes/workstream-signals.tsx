@@ -33,6 +33,7 @@ import { Input } from '../ui/input.tsx';
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter } from '../ui/dialog.tsx';
 import FloatingActionButton from '../components/FloatingActionButton.tsx';
 import { PageTitleEditorial } from '../components/PageTitles.tsx';
+import StandardHeader from '../components/StandardHeader.tsx';
 import { formatUtc } from '../utils/date.ts';
 import { toast } from '../lib/toast.ts';
 
@@ -269,24 +270,28 @@ export default function SignalsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <PageTitleEditorial
-          eyebrow="Workstream Management"
-          title="Signals"
-          subtitle="Incoming opportunities and lead signals"
-        />
-        <div className="flex gap-3">
-          <Button onClick={loadSignals} variant="outline" size="sm">
-            <RefreshCw size={16} className="mr-2" />
-            Refresh
-          </Button>
+    <div>
+      {/* Standardized Header */}
+      <StandardHeader
+        title="Signals"
+        subtitle="Incoming opportunities and lead signals from the workstream pipeline"
+        color="blue"
+        variant="comfortable"
+      />
+
+      <div className="pb-6 space-y-6">
+        {/* Quick Actions */}
+        <div className="flex items-center justify-end px-6">
+          <div className="flex gap-3">
+            <Button onClick={loadSignals} variant="outline" size="sm">
+              <RefreshCw size={16} className="mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
-      </div>
 
       {/* Filters and Search */}
-      <div className="flex items-center gap-4 p-4 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl">
+      <div className="flex items-center gap-4 p-4 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl mx-6">
         <Search size={16} className="text-zinc-400" />
         <Input
           placeholder="Search signals..."
@@ -334,7 +339,7 @@ export default function SignalsPage() {
 
       {/* Error State */}
       {error && (
-        <div className="text-center py-12 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl">
+        <div className="text-center py-12 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl mx-6">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-white mb-2">Failed to load signals</h2>
           <p className="text-zinc-400 mb-4">{error}</p>
@@ -346,7 +351,7 @@ export default function SignalsPage() {
       )}
 
       {/* Signals List */}
-      <div className="space-y-4">
+      <div className="space-y-4 mx-6">
         {filteredSignals.length === 0 ? (
           <div className="text-center py-12 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl">
             <TrendingUp className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
@@ -451,7 +456,7 @@ export default function SignalsPage() {
 
       {/* Pagination */}
       {total > limit && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mx-6">
           <div className="text-sm text-zinc-400">
             Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} signals
           </div>
@@ -493,6 +498,7 @@ export default function SignalsPage() {
         label="Add Signal"
         icon={<TrendingUp size={20} />}
       />
+      </div>
     </div>
   );
 }

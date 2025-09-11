@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Remove default browser margins and ensure full coverage */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure modals cover everything */
+.modal-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 /* Print styles for clean output */
 @media print {
   .print\:hidden { display: none !important; }
@@ -83,6 +118,7 @@ body.theme-light.accent-lime { --accent-active: var(--accent-lime); }
 /* Side navigation */
 .sidenav {
   width: 280px;
+  flex-shrink: 0;
   /* use the theme nav surface color */
   background: var(--surface-1);
   border-right: 1px solid rgba(0,0,0,0.18);
@@ -92,7 +128,9 @@ body.theme-light.accent-lime { --accent-active: var(--accent-lime); }
   gap: 1.25rem;
   color: #f5f6f7;
   position: relative; /* anchor floating controls and pseudo elements */
-  min-height: 100vh; height: 100vh;
+  min-height: 100vh; 
+  height: 100vh;
+  overflow-y: auto;
 }
 .sidenav.collapsed { width: 80px; }
 .sidenav.collapsed .logo-row span:last-child,
@@ -177,8 +215,22 @@ body.theme-light .accent-btn { color: #fff; }
 .accent-btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent-active) 60%, black 40%); outline-offset: 3px; }
 
 /* Scroll area tweak */
-.app-shell { display:flex; min-height:100vh; background: var(--surface-0); }
-.workspace { flex:1; display:flex; flex-direction:column; position: relative; }
+.app-shell { 
+  display: flex; 
+  min-height: 100vh; 
+  max-width: 100vw; 
+  overflow-x: hidden; 
+  background: var(--surface-0); 
+}
+.workspace { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  position: relative; 
+  min-width: 0; 
+  /* Allow children (like full-bleed headers) to extend to viewport edges */
+  overflow-x: visible; 
+}
 /* Subtle backlight behind the main workspace to add depth on wide screens.
    Display only in dark theme to avoid washing out light-themed surfaces. It's
    non-interactive (pointer-events:none) and sized large with heavy blur so it
@@ -208,26 +260,20 @@ body.theme-dark .workspace::before {
 body.theme-dark .sidenav::after { background: rgba(255,255,255,0.02); }
 
 /* Divider line between sidenav and workspace - matte vs glass vibes */
-/* dual-line divider for clearer separation on dark matte */
+/* Simplified single divider line */
 .sidenav::before {
-  content: "";
-  position: absolute;
-  top: 0; right: -1px; bottom: 0;
-  width: 1px;
-  pointer-events: none;
-  background: rgba(0,0,0,0.75); /* subtle dark edge into workspace */
-  opacity: .55;
-  z-index: 9;
-}
-.sidenav::after {
   content: "";
   position: absolute;
   top: 0; right: 0; bottom: 0;
   width: 1px;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
-  box-shadow: 0 0 10px rgba(255,255,255,0.04);
-  z-index: 10;
+  background: rgba(255,255,255,0.1); /* subtle light edge */
+  z-index: 9;
+}
+
+/* Remove the problematic second divider that might cause the black line */
+.sidenav::after {
+  display: none;
 }
 
 /* rail-pulse animation removed to disable sidebar glow */
@@ -247,7 +293,20 @@ body.vibe-matte .sidenav { background: var(--black-matte); }
 body.vibe-matte .sidenav::after { background: rgba(255,255,255,0.015); width: 1px; box-shadow: none; }
 
 /* No workspace gradient: keep flat background for clarity per request */
-.workspace-main { flex:1; padding: 1.75rem 2rem 3rem; max-width: 1920px; width:100%; margin:0 auto; }
+.workspace-main { 
+  /* expose top padding as a CSS var so headers can bleed to the very top */
+  --workspace-top-pad: 1.75rem;
+  --workspace-pad-x: 2rem; /* horizontal padding used by workspace */
+  flex: 1; 
+  padding: var(--workspace-top-pad) var(--workspace-pad-x) 3rem; 
+  max-width: 1920px; 
+  width: 100%; 
+  margin: 0 auto; 
+  min-width: 0;
+  /* Don’t clip full-bleed headers; sections that need scrolling should use
+    their own overflow containers (e.g., overflow-x-auto on tables) */
+  overflow-x: visible;
+}
 @media (min-width: 2200px) {
   .workspace-main { max-width: 2200px; }
 }
@@ -399,6 +458,204 @@ body.accent-amber {
 .table-modern tbody tr { transition: box-shadow .18s ease, transform .08s ease; }
 .table-modern tbody tr:hover { box-shadow: none !important; transform: none !important; }
 
+/* --- Sweep Header (animated light sweep) --- */
+.sweep-header {
+  position: relative;
+  /* adjustable spacing via CSS variables */
+  padding: var(--header-py, 60px) var(--header-px, 40px);
+  background: #0a0a0a;
+  border-bottom: 1px solid rgba(255, 255, 255, var(--header-divider-opacity, 0.1));
+  overflow: hidden;
+}
+.sweep-header::before {
+  content: '';
+  /* When used with .full-bleed, this pseudo element will be positioned
+     fixed and sized to the header bounds using CSS custom properties set
+     by the React component. This makes the decorative sweep always
+     reach the viewport edges regardless of layout or sidebars. */
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 212, 255, 0.08),
+    rgba(102, 126, 234, 0.12),
+    rgba(0, 212, 255, 0.08),
+    transparent
+  );
+  animation: header-sweep 8s linear infinite;
+  pointer-events: none;
+}
+@keyframes header-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.sweep-header .accent-line {
+  height: 3px;
+  width: 60px;
+  background: linear-gradient(90deg, #00d4ff, #667eea);
+  border-radius: 2px;
+}
+
+/* --- Transparent Aurora Header (skewed sweep + aurora blobs) --- */
+.aurora-header {
+  position: relative;
+  /* adjustable spacing via CSS variables - slightly increased for better balance */
+  padding: var(--header-py, 36px) var(--header-px, 40px);
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, var(--header-divider-opacity, 0.1));
+  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+.aurora-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(90deg,
+    transparent,
+    transparent,
+    var(--sweep-color, rgba(0, 212, 255, 0.15)),
+    transparent,
+    transparent
+  );
+  animation: header-sweep-aurora 6s ease-in-out infinite;
+  pointer-events: none;
+  transform: skewX(-25deg);
+}
+@keyframes header-sweep-aurora {
+  0% { transform: translateX(-100%) skewX(-25deg); }
+  100% { transform: translateX(100%) skewX(-25deg); }
+}
+
+/* Aurora blob layers */
+.aurora { position: absolute; width: 150%; height: 150%; top: -25%; left: var(--aurora-offset, -25%); }
+.aurora-1 {
+  background: radial-gradient(ellipse at center, var(--aurora1, rgba(120, 119, 198, 0.08)), transparent 40%);
+  filter: blur(40px);
+  animation: aurora-drift 20s ease-in-out infinite;
+}
+.aurora-2 {
+  background: radial-gradient(ellipse at center, var(--aurora2, rgba(0, 212, 255, 0.06)), transparent 45%);
+  filter: blur(60px);
+  animation: aurora-drift 25s ease-in-out infinite reverse;
+}
+@keyframes aurora-drift {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  25% { transform: translate(-10%, 10%) scale(1.2) rotate(45deg); }
+  50% { transform: translate(10%, -5%) scale(0.9) rotate(90deg); }
+  75% { transform: translate(-5%, -10%) scale(1.1) rotate(180deg); }
+}
+
+/* Title subtle glow */
+.aurora-title {
+  animation: subtle-glow 6s ease-in-out infinite;
+}
+@keyframes subtle-glow {
+  0%, 100% { filter: drop-shadow(0 0 20px rgba(120, 119, 198, 0.2)); }
+  50% { filter: drop-shadow(0 0 30px rgba(0, 212, 255, 0.3)); }
+}
+
+/* Shimmering accent line variant */
+.accent-line--shimmer { position: relative; overflow: hidden; }
+.accent-line--shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: accent-shimmer 3s infinite;
+}
+@keyframes accent-shimmer {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* Full-bleed utility: align to viewport edges by offsetting the element left by
+   the reserved rail (spacer) width plus the workspace's horizontal padding. */
+.full-bleed {
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* Enhanced full-bleed for aurora headers to ensure complete screen coverage */
+.aurora-header.full-bleed {
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  box-sizing: border-box;
+  min-width: 100vw;
+}
+
+/* Full-bleed decorative elements use the CSS offset approach so the header
+  background and pseudo elements extend to the viewport edges. This keeps
+  the implementation simple and avoids introducing fixed stacking context
+  changes which were causing visual regressions in some layouts. */
+
+/* Global variable for the current sidenav width so full-bleed elements can
+   offset themselves to the viewport edge. Keep a sensible default. */
+:root {
+  --sidenav-width: 280px;
+  /* Fixed spacer/rail width used to keep the workspace from shifting when the
+    sidebar (which is fixed-position) expands/collapses. This is the value
+    headers must compensate for to truly reach the viewport edge. */
+  --left-rail-width: 80px;
+}
+
+/* On mobile, the fixed sidebar becomes an overlay and we don't render the
+   spacer rail. Zero-out the rail width so full-bleed headers align correctly. */
+@media (max-width: 1023.98px) {
+  .workspace-main { --left-rail-width: 0px; }
+}
+
+/* Sidebar → workspace width signal via data attribute on the app shell.
+  The sidebar component toggles data-sidenav on .app-shell so we can
+  expose the correct --sidenav-width where headers live. */
+.app-shell[data-sidenav='collapsed'] .workspace { --sidenav-width: 80px; }
+.app-shell[data-sidenav='expanded'] .workspace { --sidenav-width: 280px; }
+
+/* When the sidenav is collapsed, update the variable on the workspace so
+   full-bleed headers shift correctly (sidenav and workspace are siblings). */
+.sidenav.collapsed ~ .workspace {
+  --sidenav-width: 80px;
+}
+
+/* Allow a section to visually rise into the workspace top edge (cancels main padding) */
+/* When a section wants to visually rise into the workspace top edge,
+   use the workspace's top padding variable for perfect alignment. */
+.bleed-top { margin-top: var(--bleed-top, calc(-1 * var(--workspace-top-pad, 1.75rem))); }
+
+/* Smooth bottom fade so there is no hard line where the header ends */
+.header-fade-bottom::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: var(--header-fade-h, 56px);
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(16,16,16,0) 0%,
+    color-mix(in srgb, var(--surface-0, #101010) 60%, transparent) 60%,
+    var(--surface-0, #101010) 100%
+  );
+}
+
 /* Icon Hover Glow - neon glow around small icon buttons */
 .icon-btn-sm:hover, .icon-btn:hover { box-shadow: none !important; transform: none !important; }
 
@@ -424,9 +681,158 @@ body.accent-amber {
   100% { box-shadow: 0 6px 16px color-mix(in srgb, var(--accent-active) 8%, transparent 92%); }
 }
 
+/* Pulsing Aura for Create Button */
+.animate-pulse-aura {
+  position: relative;
+  overflow: visible;
+}
+
+.animate-pulse-aura::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 12px;
+  background: linear-gradient(45deg, rgba(34, 211, 238, 0.4), rgba(6, 182, 212, 0.6), rgba(34, 211, 238, 0.4));
+  opacity: 0;
+  animation: pulsingAura 2s ease-in-out infinite;
+  z-index: -1;
+  filter: blur(8px);
+}
+
+.animate-pulse-aura::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 16px;
+  background: linear-gradient(45deg, rgba(34, 211, 238, 0.2), rgba(6, 182, 212, 0.3), rgba(34, 211, 238, 0.2));
+  opacity: 0;
+  animation: pulsingAura 2s ease-in-out infinite;
+  animation-delay: 0.5s;
+  z-index: -2;
+  filter: blur(12px);
+}
+
+@keyframes pulsingAura {
+  0% { 
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% { 
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* Intense Neon Blue Glass Aura Effect - Exact Reference Match */
+.neon-blue-glass-aura {
+  position: relative;
+  background: radial-gradient(ellipse at center, rgba(0, 123, 255, 0.2), rgba(0, 50, 100, 0.3), rgba(0, 0, 0, 0.6));
+  border: 2px solid #22d3ee;
+  backdrop-filter: blur(15px) saturate(180%);
+  box-shadow: 
+    /* Inner glass highlight */
+    inset 0 2px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    /* Main neon glow */
+    0 0 20px rgba(34, 211, 238, 0.8),
+    0 0 40px rgba(34, 211, 238, 0.6),
+    0 0 80px rgba(34, 211, 238, 0.4),
+    /* Outer atmospheric glow */
+    0 0 120px rgba(34, 211, 238, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+}
+
+.neon-blue-glass-aura:hover {
+  background: radial-gradient(ellipse at center, rgba(0, 123, 255, 0.3), rgba(0, 80, 150, 0.4), rgba(0, 20, 40, 0.5));
+  border-color: #00d4ff;
+  box-shadow: 
+    /* Enhanced inner glass */
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    /* Intensified neon glow */
+    0 0 30px rgba(0, 212, 255, 1),
+    0 0 60px rgba(34, 211, 238, 0.8),
+    0 0 100px rgba(34, 211, 238, 0.6),
+    0 0 160px rgba(34, 211, 238, 0.4),
+    0 0 200px rgba(34, 211, 238, 0.2);
+  transform: translateY(-2px) scale(1.02);
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 0 25px rgba(34, 211, 238, 1);
+}
+
+.neon-blue-glass-aura:active {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 
+    inset 0 2px 0 rgba(255, 255, 255, 0.2),
+    0 0 15px rgba(34, 211, 238, 0.9),
+    0 0 30px rgba(34, 211, 238, 0.7),
+    0 0 60px rgba(34, 211, 238, 0.5);
+}
+
+/* Animated neon pulse for extra intensity */
+@keyframes neonPulse {
+  0%, 100% { 
+    box-shadow: 
+      inset 0 2px 0 rgba(255, 255, 255, 0.3),
+      0 0 20px rgba(34, 211, 238, 0.8),
+      0 0 40px rgba(34, 211, 238, 0.6),
+      0 0 80px rgba(34, 211, 238, 0.4);
+  }
+  50% { 
+    box-shadow: 
+      inset 0 2px 0 rgba(255, 255, 255, 0.4),
+      0 0 25px rgba(34, 211, 238, 1),
+      0 0 50px rgba(34, 211, 238, 0.8),
+      0 0 100px rgba(34, 211, 238, 0.6);
+  }
+}
+
+.neon-blue-glass-aura.pulse {
+  animation: neonPulse 2s ease-in-out infinite;
+}
+
+/* Secondary Glass Effect for Supporting Buttons (Zinc Theme) */
+.glass-secondary {
+  position: relative;
+  background: radial-gradient(ellipse at center, rgba(113, 113, 122, 0.15), rgba(63, 63, 70, 0.25), rgba(0, 0, 0, 0.5));
+  border: 2px solid rgba(113, 113, 122, 0.6);
+  backdrop-filter: blur(15px) saturate(150%);
+  box-shadow: 
+    /* Inner glass highlight */
+    inset 0 2px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    /* Subtle glow */
+    0 0 15px rgba(113, 113, 122, 0.5),
+    0 0 30px rgba(113, 113, 122, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 0 6px rgba(113, 113, 122, 0.6);
+}
+
+.glass-secondary:hover {
+  background: radial-gradient(ellipse at center, rgba(113, 113, 122, 0.25), rgba(82, 82, 91, 0.35), rgba(24, 24, 27, 0.4));
+  border-color: rgba(161, 161, 170, 0.8);
+  box-shadow: 
+    /* Enhanced inner glass */
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    /* Enhanced glow */
+    0 0 20px rgba(161, 161, 170, 0.7),
+    0 0 40px rgba(113, 113, 122, 0.5),
+    0 0 70px rgba(113, 113, 122, 0.3);
+  transform: translateY(-1px) scale(1.01);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 0 15px rgba(161, 161, 170, 0.8);
+}
+
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .glow-cta::before, .glow-pulse { transition: none !important; animation: none !important; }
+  .animate-pulse-aura::before, .animate-pulse-aura::after { animation: none !important; opacity: 0.3 !important; }
+  .glass-fx-neon-blue::before { transition: none !important; }
+  .glass-fx-neon-blue:hover { transform: none !important; }
   .table-modern tbody tr:hover { transform: none; box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-active) 4%, transparent 96%); }
   .icon-btn-sm:hover, .icon-btn:hover { transform: none; }
 }
@@ -618,11 +1024,6 @@ body[data-module] {
   --accent: var(--module-accent);
 }
 
-/* Module-specific styling */
-.module-content {
-  /* Any module-specific styles can go here */
-}
-
 /* Module glow effects */
 .module-glow {
   position: relative;
@@ -637,4 +1038,23 @@ body[data-module] {
   opacity: 0.1;
   pointer-events: none;
   z-index: -1;
+}
+
+/* Prevent flicker and improve performance */
+.transform-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+}
+
+/* Smooth transitions for KPI cards */
+.kpi-card-button {
+  transform-origin: center center;
+  backface-visibility: hidden;
+}
+
+/* Ensure proper layering for glow effects */
+.glow-shadow {
+  isolation: isolate;
 }

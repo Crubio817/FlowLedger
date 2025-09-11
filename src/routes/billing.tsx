@@ -1,15 +1,17 @@
 import React from 'react';
-import BillingAdvancedTableProduction from '../components/BillingAdvancedTableProduction.tsx';
+import SimpleBillingTable from '../components/SimpleBillingTable.tsx';
 import { PageTitleEditorial } from '../components/PageTitles.tsx';
+import StandardHeader from '../components/StandardHeader.tsx';
 
 const BillingRoute: React.FC = () => {
   return (
     <>
-      <PageTitleEditorial 
+      <StandardHeader 
         title="Billing & Contracts"
         subtitle="Manage contracts, time tracking, invoicing, and payments"
+        color="emerald"
       />
-      <BillingAdvancedTableProduction orgId={1} />
+      <SimpleBillingTable orgId={1} />
     </>
   );
 };

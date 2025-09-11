@@ -450,13 +450,6 @@ const ClientsAdvancedTable: React.FC = () => {
                 ))}
               </div>
             </div>
-            
-            <button className="px-5 py-2.5 bg-gradient-to-r from-[#4997D0] to-cyan-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-[#4997D0]/30 transition-all transform hover:scale-105">
-              <span className="flex items-center gap-2">
-                <Sparkles size={18} />
-                Add Client
-              </span>
-            </button>
           </div>
         </div>
 

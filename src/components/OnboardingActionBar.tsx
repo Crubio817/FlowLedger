@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, ChevronDown, Users, Briefcase, FileText, Calendar, Building2, UserPlus, Search, ClipboardList } from 'lucide-react';
-import CreateClientModal from './CreateClientModalNew.tsx';
 import { CreateTaskModal } from './CreateTaskModal.tsx';
 
 interface CreateAction {
@@ -18,7 +17,6 @@ interface OnboardingActionBarProps {
 const OnboardingActionBar: React.FC<OnboardingActionBarProps> = ({ onTaskCreated }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [openClientModal, setOpenClientModal] = useState(false);
   const [openTaskModal, setOpenTaskModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<number>(1); // Default client ID for task creation
 
@@ -45,15 +43,6 @@ const OnboardingActionBar: React.FC<OnboardingActionBarProps> = ({ onTaskCreated
   };
 
   const secondaryActions: CreateAction[] = [
-    {
-      id: 'add-client',
-      label: 'Add Client',
-      icon: <Building2 className="w-4 h-4" />,
-      description: 'Create a new client profile',
-      onClick: () => {
-        setOpenClientModal(true);
-      }
-    },
     {
       id: 'create-engagement',
       label: 'Create Engagement',
@@ -203,15 +192,6 @@ const OnboardingActionBar: React.FC<OnboardingActionBarProps> = ({ onTaskCreated
       </div>
 
       {/* Modals */}
-      <CreateClientModal
-        open={openClientModal}
-        onClose={() => setOpenClientModal(false)}
-        onCreated={(res: any) => {
-          const newId = res?.data?.client?.client_id || res?.data?.client_id;
-          if (newId) window.location.href = `/clients/${newId}`;
-        }}
-      />
-      
       <CreateTaskModal
         open={openTaskModal}
         clientId={selectedClientId}

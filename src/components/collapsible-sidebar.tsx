@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import logoPng from '../assets/logo.png';
 import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
@@ -27,17 +27,26 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
   MessageSquare,
   ClipboardList,
   Zap,
+  CreditCard,
   TrendingUp,
+  BookOpen,
+  Wand2,
   Target,
   MessageCircle,
   Phone,
   UserCheck,
   UserPlus,
+  Brain,
 } from 'lucide-react';const Sidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const EXPANDED_SECTIONS_STORAGE_KEY = 'ui:sidebarExpandedSections';
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['clients']));
+  // Sections opened via hover (desktop only)
+  const [hoveredSections, setHoveredSections] = useState<Set<string>>(new Set());
+  // Timers for hover open/close delay
+  const hoverTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Toggle section expansion
   const toggleSection = (sectionId: string) => {
@@ -49,6 +58,22 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
     }
     setExpandedSections(newExpanded);
   };
+
+  // Hydrate expanded sections from storage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(EXPANDED_SECTIONS_STORAGE_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) setExpandedSections(new Set(arr));
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Persist expanded sections
+  useEffect(() => {
+    try { localStorage.setItem(EXPANDED_SECTIONS_STORAGE_KEY, JSON.stringify([...expandedSections])); } catch {}
+  }, [expandedSections]);
 
   // Check if we're on mobile
   useEffect(() => {
@@ -81,6 +106,41 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMobile, isMobileMenuOpen]);
 
+  // Hover helpers with small delay (desktop only)
+  const handleSectionHover = (sectionId: string, entering: boolean) => {
+    if (isMobile) return; // don't use hover open on mobile
+    const existing = hoverTimers.current.get(sectionId);
+    if (existing) {
+      clearTimeout(existing);
+      hoverTimers.current.delete(sectionId);
+    }
+    const delay = entering ? 100 : 140; // ms
+    const t = setTimeout(() => {
+      setHoveredSections((prev) => {
+        const next = new Set(prev);
+        if (entering) next.add(sectionId); else next.delete(sectionId);
+        return next;
+      });
+      hoverTimers.current.delete(sectionId);
+    }, delay);
+    hoverTimers.current.set(sectionId, t);
+  };
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      hoverTimers.current.forEach((t) => clearTimeout(t));
+      hoverTimers.current.clear();
+    };
+  }, []);
+
+  // Ensure an inherited CSS variable on the shared ancestor (.app-shell)
+  // exposes the current sidebar width. Full-bleed headers live in the
+  // workspace (a descendant of .app-shell) and read this variable.
+  // Note: we intentionally do not set the CSS variable on the global
+  // .app-shell here to avoid side-effects. The sidebar element itself
+  // exposes --sidenav-width inline which allows descendants to read it
+  // via inheritance through normal DOM ordering.
+
     const menuItems = [
     { icon: BarChart3, text: 'Dashboard', href: '/dashboard' },
     { icon: Zap, text: 'Modules', href: '/modules' },
@@ -91,6 +151,9 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
       type: 'expandable' as const,
       children: [
         { icon: BarChart3, text: 'Today Panel', href: '/workstream/today' },
+        { icon: Zap, text: 'Enhanced Panel', href: '/workstream/enhanced' },
+        { icon: Target, text: 'ICP Analysis', href: '/workstream/icp' },
+        { icon: Brain, text: 'Spotlight', href: '/workstream/spotlight' },
         { icon: TrendingUp, text: 'Signals', href: '/workstream/signals' },
         { icon: Users, text: 'Candidates', href: '/workstream/candidates' },
         { icon: Target, text: 'Pursuits', href: '/workstream/pursuits' }
@@ -110,7 +173,7 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
     { 
       icon: Handshake, 
       text: 'Engagements', 
-      href: '/clients/engagements',
+      href: '/engagements',
       type: 'expandable' as const,
       children: [
         { 
@@ -127,6 +190,8 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
         }
       ]
     },
+  { icon: CreditCard, text: 'Billing', href: '/billing' },
+  { icon: Zap, text: 'Automation', href: '/automation' },
     { 
       icon: MessageCircle, 
       text: 'Communication Hub', 
@@ -137,6 +202,17 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
         { icon: Search, text: 'Advanced Search', href: '/comms/search' },
         { icon: FileText, text: 'Email Templates', href: '/comms/templates' },
         { icon: UserCheck, text: 'Principals', href: '/settings/principals' }
+      ]
+    },
+    { 
+      icon: FileText, 
+      text: 'Docs & Knowledge', 
+      href: '/documents',
+      type: 'expandable' as const,
+      children: [
+        { icon: FileText, text: 'Documents', href: '/documents' },
+        { icon: BookOpen, text: 'Knowledge Base', href: '/knowledge' },
+        { icon: Wand2, text: 'Templates', href: '/doc-templates' }
       ]
     },
   ];
@@ -175,7 +251,13 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
               }`
             : `${isCollapsed ? 'w-20' : 'w-64'} fixed left-0 top-0 z-40 transition-[width] duration-300 ease-out`
         } bg-zinc-950 border-r border-zinc-800 flex flex-col shadow-2xl`}
-        style={{ minHeight: '100vh', overflow: 'hidden', willChange: isMobile ? 'transform' : 'width' }}
+        style={{
+          minHeight: '100vh',
+          overflow: 'hidden',
+          willChange: isMobile ? 'transform' : 'width',
+          /* expose current sidebar width to CSS so headers can full-bleed correctly */
+          ...(isMobile ? {} : ({ ['--sidenav-width']: isCollapsed ? '80px' : '280px' } as React.CSSProperties)),
+        } as React.CSSProperties}
         onMouseEnter={() => !isMobile && isCollapsed && setIsCollapsed(false)}
         onMouseLeave={() => !isMobile && !isCollapsed && setIsCollapsed(true)}
       >
@@ -188,9 +270,9 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
           <div className={`flex items-center space-x-3 ${
             !isMobile && isCollapsed ? 'justify-center' : ''
           }`}> 
-            <img src={logoPng} alt="FlowLedger" className="w-10 h-10 rounded" />
+            <img src={logoPng} alt="FlowLedger" className="w-8 h-8 rounded" />
             {(isMobile || !isCollapsed) && (
-              <span className="text-white font-semibold text-lg tracking-wide">FlowLedger</span>
+              <span className="text-white font-semibold text-base tracking-wide">FlowLedger</span>
             )}
           </div>
           {isMobile && (
@@ -213,7 +295,11 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
             
             if (item.type === 'expandable') {
               return (
-                <div key={item.text}>
+                <div
+                  key={item.text}
+                  onMouseEnter={() => handleSectionHover(item.text, true)}
+                  onMouseLeave={() => handleSectionHover(item.text, false)}
+                >
                   {/* Main expandable item */}
                   <div className="flex">
                     <NavLink
@@ -266,15 +352,19 @@ import { QuickModuleAccess } from './GlobalModuleLauncher.tsx';
                   </div>
                   
                   {/* Children items */}
-                  {(isMobile || !isCollapsed) && item.children && isExpanded && (
+                  {(isMobile || !isCollapsed) && item.children && (isExpanded || hoveredSections.has(item.text)) && (
                     <div className="ml-6 mt-1 space-y-1">
                       {item.children.map((child) => {
                         const ChildIcon = child.icon;
-                        const isChildExpanded = expandedSections.has(child.text);
+                        const isChildExpanded = expandedSections.has(child.text) || hoveredSections.has(child.text);
                         
                         if ('type' in child && child.type === 'expandable') {
                           return (
-                            <div key={child.text}>
+                            <div
+                              key={child.text}
+                              onMouseEnter={() => handleSectionHover(child.text, true)}
+                              onMouseLeave={() => handleSectionHover(child.text, false)}
+                            >
                               {/* Nested expandable item */}
                               <div className="flex">
                                 <NavLink

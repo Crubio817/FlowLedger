@@ -10,6 +10,7 @@ interface Finding extends ApiFinding {
 import { toast } from '../lib/toast.ts';
 import { useUnsavedGuard } from '../hooks/useUnsavedGuard.ts';
 import { PageTitleEditorial } from '../components/PageTitles.tsx';
+import StandardHeader from '../components/StandardHeader.tsx';
 import { savedToast } from '../lib/saveNotifier.ts';
 
 export default function FindingsRoute() {
@@ -133,10 +134,10 @@ export default function FindingsRoute() {
 
   return (
     <main className="p-6 print:p-0 print:bg-white print:text-black">
-      <PageTitleEditorial
-        eyebrow="Audit Results"
+      <StandardHeader
         title={`Findings & Recommendations — Audit #${auditId}`}
         subtitle="Comprehensive analysis of audit discoveries and recommended remediation actions"
+        color="emerald"
       />
       
       <div className="flex justify-end mb-4 print:mb-2">

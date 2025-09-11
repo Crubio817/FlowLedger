@@ -8,39 +8,54 @@ export interface BaseEntity {
   updated_utc?: string;
 }
 
-// Signal: Incoming lead/opportunity signals
+// Signal: Incoming lead/opportunity signals (v2.2 enhanced)
 export interface Signal extends BaseEntity {
   signal_id: number;
   snippet: string;
   source_type: 'email' | 'phone' | 'web' | 'referral' | 'linkedin' | 'other';
-  urgency_score: number; // 1-100
-  cluster_id?: string; // Group related signals
+  source_ref?: string; // Reference to source system
+  urgency_score: number; // 0.0-1.0 (v2.2 normalized)
+  cluster_id?: number; // Group related signals
   cluster_count?: number; // How many in cluster
   owner_user_id?: number;
   status: 'new' | 'triaged' | 'candidate_created' | 'ignored';
+  contact_id?: number; // Resolved contact
+  client_id?: number; // Resolved client
+  contact_email?: string;
+  contact_phone?: string;
+  company_domain?: string;
+  problem_phrase?: string;
+  solution_hint?: string;
+  dedupe_key?: string; // Identity resolution key
   metadata_json?: any; // Source-specific data
   has_candidate?: boolean;
 }
 
-// Candidate: Potential opportunities from signals
+// Candidate: Potential opportunities from signals (v2.2 enhanced)
 export interface Candidate extends BaseEntity {
   candidate_id: number;
   signal_id?: number; // Origin signal
   title: string;
   client_id?: number; // If known client
+  contact_id?: number; // Resolved contact
   contact_name?: string;
   contact_email?: string;
   value_band: 'small' | 'medium' | 'large' | 'enterprise'; // Revenue potential
+  one_liner_scope?: string; // Brief scope description
   confidence: number; // 0-100 likelihood
   status: 'new' | 'triaged' | 'nurture' | 'on_hold' | 'promoted' | 'archived';
   owner_user_id?: number;
   last_touch_at?: string;
+  days_since_touch?: number; // Computed field
   promoted_at?: string;
   notes?: string;
   sla_badge?: 'green' | 'amber' | 'red';
+  has_threads?: number; // Count of related threads
+  has_docs?: number; // Count of related documents
+  spotlight_scores?: SpotlightScoresSummary; // ICP scoring
 }
 
-// Pursuit: Active deals/opportunities
+// Pursuit: Active deals/opportunities (v2.2 enhanced)
 export interface Pursuit extends BaseEntity {
   pursuit_id: number;
   candidate_id: number; // Source candidate
@@ -52,11 +67,15 @@ export interface Pursuit extends BaseEntity {
   forecast_value_usd?: number;
   probability: number; // 0-100
   description?: string;
+  compliance_score?: number; // Quality score (0-10)
   checklist_required?: boolean; // For Pink/Red gating
   checklist_complete?: boolean;
   submitted_at?: string;
   decision_at?: string;
   sla_badge?: 'green' | 'amber' | 'red';
+  has_threads?: number; // Count of related threads
+  has_docs?: number; // Count of related documents
+  last_touch_at?: string;
 }
 
 // Proposal: Versioned proposals for pursuits
@@ -192,20 +211,25 @@ export interface WorkstreamApiResponse<T> {
   };
 }
 
-// Today Panel unified view
+// Today Panel unified view (v2.2 enhanced with priority scoring)
 export interface TodayPanelItem {
   item_type: 'signal' | 'candidate' | 'pursuit';
   item_id: number;
+  org_id: number;
   label: string;
   state: string; // Current status/stage
   owner_user_id?: number;
   last_touch_at?: string;
   due_date?: string;
-  sla_badge?: 'green' | 'amber' | 'red';
-  sla_metric?: string; // Human readable SLA status
+  sla_metric?: string; // SLA rule being tracked
+  badge?: 'green' | 'amber' | 'red'; // SLA status
+  priority_score?: number; // Computed priority (0-200)
+  priority_tier?: 'critical' | 'high' | 'medium' | 'low';
+  icp_band?: 'high' | 'medium' | 'low'; // ICP scoring band
+  hours_since_touch?: number;
   has_threads?: boolean;
   has_docs?: boolean;
-  urgency_score?: number; // For signals
+  urgency_score?: number; // For signals (0.0-1.0)
   value_band?: string; // For candidates
   forecast_value_usd?: number; // For pursuits
 }
@@ -235,13 +259,13 @@ export interface PursuitFilters {
   client?: number;
 }
 
-// State machine definitions
+// State machine definitions (v2.2 enhanced - configurable)
 export const CANDIDATE_TRANSITIONS = {
-  new: ['triaged'],
+  new: ['triaged', 'archived'],
   triaged: ['nurture', 'on_hold', 'promoted', 'archived'],
-  nurture: ['triaged', 'promoted', 'archived'],
-  on_hold: ['triaged', 'archived'],
-  promoted: [], // Terminal state
+  nurture: ['on_hold', 'promoted', 'archived'],
+  on_hold: ['nurture', 'promoted', 'archived'],
+  promoted: ['archived'], // Terminal after promotion
   archived: [], // Terminal state
 } as const;
 
@@ -317,6 +341,16 @@ export function getStageColor(stage: string): string {
   }
 }
 
+export function getPriorityTierColor(tier: string): string {
+  switch (tier) {
+    case 'critical': return 'text-red-400 bg-red-500/20';
+    case 'high': return 'text-orange-400 bg-orange-500/20';
+    case 'medium': return 'text-yellow-400 bg-yellow-500/20';
+    case 'low': return 'text-emerald-400 bg-emerald-500/20';
+    default: return 'text-zinc-400 bg-zinc-500/20';
+  }
+}
+
 export function formatCurrency(amount: number | null | undefined): string {
   if (amount == null) return '--';
   return new Intl.NumberFormat('en-US', {
@@ -325,4 +359,111 @@ export function formatCurrency(amount: number | null | undefined): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+// New v2.2 types for enhanced features
+export interface SpotlightScoresSummary {
+  total_score: number;
+  top_positive: string;
+  top_negative: string;
+}
+
+export interface IdentityResolution {
+  contact_resolved: boolean;
+  contact_id?: number;
+  client_resolved: boolean;
+  client_id?: number;
+  confidence_score: number;
+  resolution_method: 'auto_resolved' | 'manual_resolved' | 'conflict_detected';
+}
+
+export interface QualityGateResult {
+  gate_type: string;
+  missing_items: string[];
+  required_items: string[];
+  all_completed: boolean;
+}
+
+export interface ConfigurationItem {
+  config_id: number;
+  config_type: 'sla_rule' | 'gate_rule' | 'ranking_rule' | 'spotlight_rule';
+  config_key: string;
+  config_value: any;
+  effective_from: string;
+  effective_to?: string;
+}
+
+export interface IdentityConflict {
+  conflict_id: number;
+  key_type: 'email' | 'phone' | 'domain';
+  key_value: string;
+  conflicting_contact_ids: number[];
+  conflicting_client_ids: number[];
+  conflict_reason: string;
+  detected_at: string;
+  resolution_status: 'pending' | 'resolved' | 'ignored';
+}
+
+export interface SpotlightScoreBreakdown {
+  item_type: 'signal' | 'candidate' | 'pursuit';
+  item_id: number;
+  spotlight_id?: number;
+  total_score: number;
+  algorithm_version: string;
+  scored_at: string;
+  score_breakdown: SpotlightScoreComponent[];
+  top_positive: string;
+  top_negative: string;
+  component_count: number;
+}
+
+export interface SpotlightScoreComponent {
+  name: string;
+  score: number;
+  weight: number;
+  reason: string;
+  contribution: number;
+}
+
+export interface WorkloadAnalysis {
+  owner_user_id: number;
+  total_items: number;
+  critical_items: number;
+  high_priority_items: number;
+  medium_priority_items: number;
+  low_priority_items: number;
+  avg_priority_score: number;
+  sla_breaches: number;
+  at_risk_items: number;
+  max_hours_without_touch: number;
+  stale_items: number;
+}
+
+export interface MemoryCard {
+  summary: {
+    key_facts: string[];
+    recent_activity: string[];
+    decisions: string[];
+  };
+  top_atoms: MemoryAtom[];
+  last_built_at: string;
+  etag: string;
+  empty: boolean;
+}
+
+export interface MemoryAtom {
+  atom_id?: number;
+  entity_type: string;
+  entity_id: number;
+  atom_type: 'decision' | 'risk' | 'preference' | 'note' | 'status';
+  content: string;
+  occurred_at: string;
+  source_url?: string;
+  score?: number;
+  tags?: string[];
+  source?: {
+    system: string;
+    origin_id?: string;
+    url?: string;
+  };
 }

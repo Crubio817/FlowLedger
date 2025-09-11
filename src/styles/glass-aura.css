@@ -1,0 +1,221 @@
+/* Glassmorphism Aura Button Styles */
+.glass-aura {
+  padding: 16px 28px;
+  border: none;
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  position: relative;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.glass-aura-blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow:
+    0 8px 32px rgba(59, 130, 246, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-blue:hover {
+  background: rgba(59, 130, 246, 0.25);
+  box-shadow:
+    0 0 40px rgba(59, 130, 246, 0.5),
+    0 0 80px rgba(59, 130, 246, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-green {
+  background: rgba(16, 185, 129, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow:
+    0 8px 32px rgba(16, 185, 129, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-green:hover {
+  background: rgba(16, 185, 129, 0.25);
+  box-shadow:
+    0 0 40px rgba(16, 185, 129, 0.5),
+    0 0 80px rgba(16, 185, 129, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-pink {
+  background: rgba(236, 72, 153, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(236, 72, 153, 0.3);
+  box-shadow:
+    0 8px 32px rgba(236, 72, 153, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-pink:hover {
+  background: rgba(236, 72, 153, 0.25);
+  box-shadow:
+    0 0 40px rgba(236, 72, 153, 0.5),
+    0 0 80px rgba(236, 72, 153, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-violet {
+  background: rgba(168, 85, 247, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  box-shadow:
+    0 8px 32px rgba(168, 85, 247, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-violet:hover {
+  background: rgba(168, 85, 247, 0.25);
+  box-shadow:
+    0 0 40px rgba(168, 85, 247, 0.5),
+    0 0 80px rgba(168, 85, 247, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow:
+    0 8px 32px rgba(245, 158, 11, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-amber:hover {
+  background: rgba(245, 158, 11, 0.25);
+  box-shadow:
+    0 0 40px rgba(245, 158, 11, 0.5),
+    0 0 80px rgba(245, 158, 11, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-crimson {
+  background: rgba(220, 38, 127, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(220, 38, 127, 0.3);
+  box-shadow:
+    0 8px 32px rgba(220, 38, 127, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-crimson:hover {
+  background: rgba(220, 38, 127, 0.25);
+  box-shadow:
+    0 0 40px rgba(220, 38, 127, 0.5),
+    0 0 80px rgba(220, 38, 127, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-sky {
+  background: rgba(14, 165, 233, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  box-shadow:
+    0 8px 32px rgba(14, 165, 233, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-sky:hover {
+  background: rgba(14, 165, 233, 0.25);
+  box-shadow:
+    0 0 40px rgba(14, 165, 233, 0.5),
+    0 0 80px rgba(14, 165, 233, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-mint {
+  background: rgba(6, 182, 212, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  box-shadow:
+    0 8px 32px rgba(6, 182, 212, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-mint:hover {
+  background: rgba(6, 182, 212, 0.25);
+  box-shadow:
+    0 0 40px rgba(6, 182, 212, 0.5),
+    0 0 80px rgba(6, 182, 212, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-coral {
+  background: rgba(251, 113, 133, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(251, 113, 133, 0.3);
+  box-shadow:
+    0 8px 32px rgba(251, 113, 133, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-coral:hover {
+  background: rgba(251, 113, 133, 0.25);
+  box-shadow:
+    0 0 40px rgba(251, 113, 133, 0.5),
+    0 0 80px rgba(251, 113, 133, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-lavender {
+  background: rgba(196, 181, 253, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(196, 181, 253, 0.3);
+  box-shadow:
+    0 8px 32px rgba(196, 181, 253, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-lavender:hover {
+  background: rgba(196, 181, 253, 0.25);
+  box-shadow:
+    0 0 40px rgba(196, 181, 253, 0.5),
+    0 0 80px rgba(196, 181, 253, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  box-shadow:
+    0 8px 32px rgba(249, 115, 22, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-orange:hover {
+  background: rgba(249, 115, 22, 0.25);
+  box-shadow:
+    0 0 40px rgba(249, 115, 22, 0.5),
+    0 0 80px rgba(249, 115, 22, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.glass-aura-emerald {
+  background: rgba(5, 150, 105, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  box-shadow:
+    0 8px 32px rgba(5, 150, 105, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-aura-emerald:hover {
+  background: rgba(5, 150, 105, 0.25);
+  box-shadow:
+    0 0 40px rgba(5, 150, 105, 0.5),
+    0 0 80px rgba(5, 150, 105, 0.3);
+  transform: translateY(-3px) scale(1.03);
+}
+
+@keyframes glass-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Optional utility classes for floating animation */
+.glass-aura.float-odd {
+  animation: glass-float 6s ease-in-out infinite;
+}
+.glass-aura.float-even {
+  animation: glass-float 6s ease-in-out infinite reverse;
+}
+

@@ -5,25 +5,31 @@
 // 3) In prod: Azure Function default URL
 
 const env = (import.meta as any).env || {};
-// Prefer explicit VITE_API_BASE_URL; if not set and in dev, point to local backend on port 4000
+// Prefer explicit VITE_API_BASE_URL; if not set and in dev, point to local backend on port 4001
 // Resolve API base URL with runtime fallback so preview served on localhost can reach local backend
 let resolvedBase = env.VITE_API_BASE_URL as string | undefined;
 if (!resolvedBase) {
   if (env.DEV) {
-    resolvedBase = 'http://localhost:4001/api';
+    // In dev mode, use the Vite proxy by using relative path
+    resolvedBase = '/api';
   } else {
-    // At runtime (preview/prod), prefer local backend when the site is opened on localhost in the browser
+    // At runtime (preview/prod), prefer local backend when site opened on localhost; always include /api suffix
     try {
       const host = typeof window !== 'undefined' ? window.location.hostname : undefined;
       if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
         resolvedBase = 'http://localhost:4001/api';
       } else {
-  resolvedBase = 'https://flowledger-api-web.azurewebsites.net/api';
+        resolvedBase = 'https://flowledger-api-web.azurewebsites.net/api';
       }
     } catch {
-  resolvedBase = 'https://flowledger-api-web.azurewebsites.net/api';
+      resolvedBase = 'https://flowledger-api-web.azurewebsites.net/api';
     }
   }
+}
+
+// If a custom base was provided but omitted /api while our endpoints expect it, append it (avoid duplicate if already present)
+if (resolvedBase && !/\/api\/?$/.test(resolvedBase)) {
+  resolvedBase = resolvedBase.replace(/\/$/, '') + '/api';
 }
 export const API_BASE_URL: string = resolvedBase;
 
@@ -37,6 +43,23 @@ function resolveCredentialsMode(): RequestCredentials {
   return 'omit';
 }
 const creds = resolveCredentialsMode();
+// Join base and path safely, avoiding duplicate '/api'
+function joinUrl(base: string, path: string): string {
+  // Absolute URL passed as path
+  if (/^https?:\/\//i.test(path)) return path;
+  const b = base.replace(/\/$/, '');
+  let p = path.startsWith('/') ? path : `/${path}`;
+  // If base already ends with /api and path also starts with /api (with or without trailing slash), drop one
+  if (b.endsWith('/api') && /^\/api(\/|$)/.test(p)) {
+    // remove leading '/api' once
+    p = p.replace(/^\/api(?=\/|$)/, '');
+    if (!p.startsWith('/')) p = `/${p}`;
+  }
+  return b + p;
+}
+
+// Expose internal helpers for tests only (harmless in production)
+export const __test = { joinUrl };
 
 export type HttpError = { code: number; message: string };
 
@@ -81,19 +104,19 @@ async function requestWithRetry<T>(url: string, fetchOpts: RequestInit, tries = 
 
 export const http = {
   async get<T>(path: string): Promise<T> {
-  const url = `${API_BASE_URL}${path}`;
+  const url = joinUrl(API_BASE_URL, path);
     return requestWithRetry<T>(url, { method: 'GET', credentials: creds });
   },
   async post<T>(path: string, body?: unknown, headers: Record<string,string> = {}): Promise<T> {
-  const url = `${API_BASE_URL}${path}`;
+  const url = joinUrl(API_BASE_URL, path);
     return requestWithRetry<T>(url, { method: 'POST', credentials: creds, headers: { 'Content-Type': 'application/json', ...headers }, body: body !== undefined ? JSON.stringify(body) : undefined });
   },
   async put<T>(path: string, body?: unknown, headers: Record<string,string> = {}): Promise<T> {
-  const url = `${API_BASE_URL}${path}`;
+  const url = joinUrl(API_BASE_URL, path);
     return requestWithRetry<T>(url, { method: 'PUT', credentials: creds, headers: { 'Content-Type': 'application/json', ...headers }, body: body !== undefined ? JSON.stringify(body) : undefined });
   },
   async del<T>(path: string): Promise<T> {
-  const url = `${API_BASE_URL}${path}`;
+  const url = joinUrl(API_BASE_URL, path);
     return requestWithRetry<T>(url, { method: 'DELETE', credentials: creds });
   },
 };

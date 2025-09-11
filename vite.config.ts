@@ -9,7 +9,20 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-  '/api': 'http://localhost:4001',
+      '/api': {
+        target: 'http://127.0.0.1:4001',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path, // Keep the /api path as-is
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Proxy error:', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Proxying request:', req.method, req.url, '-> http://127.0.0.1:4001' + req.url);
+          });
+        },
+      },
     },
   },
   resolve: {

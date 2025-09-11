@@ -1,5 +1,6 @@
 // Central app config & API endpoints
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+// Expect API_BASE_URL to be base origin (no trailing /api). We prefix endpoints with '/api'.
+export const API_BASE = '/api';
 
 // People Module API endpoints
 export const PEOPLE_API = {

@@ -23,6 +23,7 @@ import { Badge } from '../ui/badge.tsx';
 import { Button } from '../ui/button.tsx';
 import KpiCard from './KpiCard.tsx';
 import { PageTitleEditorial } from './PageTitles.tsx';
+import StandardHeader from './StandardHeader.tsx';
 import { formatUtc } from '../utils/date.ts';
 
 interface WorkstreamStats {
@@ -66,7 +67,7 @@ export default function TodayPanel() {
 
   const filteredItems = (Array.isArray(items) ? items : []).filter(item => {
     if (filterType !== 'all' && item.item_type !== filterType) return false;
-    if (filterSla !== 'all' && item.sla_badge !== filterSla) return false;
+    if (filterSla !== 'all' && item.badge !== filterSla) return false;
     return true;
   });
 
@@ -123,23 +124,19 @@ export default function TodayPanel() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <PageTitleEditorial
-          eyebrow="Workstream Dashboard"
-          title="Today's Priorities"
-          subtitle="Critical workstream items requiring attention"
-        />
-        <Button onClick={loadData} variant="outline" size="sm">
-          <RefreshCw size={16} className="mr-2" />
-          Refresh
-        </Button>
-      </div>
+    <div>
+      {/* Ethereal Aurora Header */}
+      <StandardHeader
+        title="Today's Priorities"
+        subtitle="Critical workstream items requiring attention"
+        color="blue"
+        variant="comfortable"
+      />
 
-      {/* Stats Cards */}
+      <div className="pb-6 space-y-6">
+        {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 px-6">
           <KpiCard
             title="Due Today"
             value={stats.today_due}
@@ -174,20 +171,22 @@ export default function TodayPanel() {
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-4 p-4 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl">
-        <Filter size={16} className="text-zinc-400" />
-        
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-400">Type:</span>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value as any)}
-            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:border-cyan-500"
-          >
-            <option value="all">All</option>
-            <option value="signal">Signals</option>
-            <option value="candidate">Candidates</option>
-            <option value="pursuit">Pursuits</option>
+              {/* Filters */}
+        <div className="flex items-center gap-4 p-4 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl mx-6">
+        <div className="flex items-center gap-4">
+          <Filter size={16} className="text-zinc-400" />
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-zinc-400">Type:</span>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as any)}
+              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:border-cyan-500"
+            >
+              <option value="all">All</option>
+              <option value="signal">Signals</option>
+              <option value="candidate">Candidates</option>
+              <option value="pursuit">Pursuits</option>
           </select>
         </div>
 
@@ -205,13 +204,20 @@ export default function TodayPanel() {
           </select>
         </div>
 
-        <div className="ml-auto text-sm text-zinc-400">
-          {filteredItems.length} of {items.length} items
+        <div className="ml-auto flex items-center gap-4">
+          <div className="text-sm text-zinc-400">
+            {filteredItems.length} of {items.length} items
+          </div>
+          <Button onClick={loadData} variant="outline" size="sm">
+            <RefreshCw size={16} className="mr-2" />
+            Refresh
+          </Button>
+        </div>
         </div>
       </div>
 
       {/* Items List */}
-      <div className="space-y-3">
+      <div className="space-y-3 mx-6">
         {filteredItems.length === 0 ? (
           <div className="text-center py-12 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl">
             <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
@@ -235,9 +241,9 @@ export default function TodayPanel() {
                       <Badge variant="muted" className="text-xs">
                         {item.item_type}
                       </Badge>
-                      {item.sla_badge && (
+                      {item.badge && (
                         <div className="flex items-center gap-1">
-                          {getSlaIcon(item.sla_badge)}
+                          {getSlaIcon(item.badge)}
                           <span className="text-xs text-zinc-400">{item.sla_metric}</span>
                         </div>
                       )}
@@ -317,6 +323,7 @@ export default function TodayPanel() {
             View All Pursuits
           </Button>
         </Link>
+      </div>
       </div>
     </div>
   );

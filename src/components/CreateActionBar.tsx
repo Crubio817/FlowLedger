@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Plus, ChevronDown, Users, Briefcase, FileText, Calendar, Building2, UserPlus, Search, ClipboardList } from 'lucide-react';
-import CreateClientModal from './CreateClientModalNew.tsx';
 
 interface CreateAction {
   id: string;
@@ -15,7 +14,6 @@ const CreateActionBar: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
-  const [openClientModal, setOpenClientModal] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -32,19 +30,6 @@ const CreateActionBar: React.FC = () => {
   // Get context-aware primary action based on current route
   const getPrimaryAction = (): CreateAction => {
     const path = location.pathname;
-    
-    if (path.includes('/clients')) {
-      return {
-        id: 'add-client',
-        label: 'Add Client',
-        icon: <Building2 className="w-4 h-4" />,
-        description: 'Create a new client profile',
-        onClick: () => {
-          console.log('Add Client clicked');
-          // TODO: Open add client modal/page
-        }
-      };
-    }
     
     if (path.includes('/engagements')) {
       return {
@@ -100,28 +85,18 @@ const CreateActionBar: React.FC = () => {
     
     // Default action
     return {
-      id: 'add-client',
-      label: 'Add Client',
-      icon: <Building2 className="w-4 h-4" />,
-      description: 'Create a new client profile',
+      id: 'create-engagement',
+      label: 'Create Engagement',
+      icon: <Briefcase className="w-4 h-4" />,
+      description: 'Start a new client engagement',
       onClick: () => {
-        console.log('Add Client clicked');
-        // TODO: Open add client modal/page
+        console.log('Create Engagement clicked');
+        // TODO: Open create engagement modal/page
       }
     };
   };
 
   const getAllSecondaryActions = (): CreateAction[] => [
-    {
-      id: 'add-client',
-      label: 'Add Client',
-      icon: <Building2 className="w-4 h-4" />,
-      description: 'Create a new client profile',
-      onClick: () => {
-        console.log('Add Client clicked');
-        // TODO: Open add client modal/page
-      }
-    },
     {
       id: 'create-engagement',
       label: 'Create Engagement',
@@ -180,11 +155,7 @@ const CreateActionBar: React.FC = () => {
   const secondaryActions = allActions.filter(action => action.id !== primaryAction.id);
 
   const handlePrimaryAction = () => {
-    if (primaryAction.id === 'add-client') {
-      setOpenClientModal(true);
-    } else {
-      primaryAction.onClick();
-    }
+    primaryAction.onClick();
   };
 
   const handleSecondaryAction = (action: CreateAction) => {
@@ -283,14 +254,6 @@ const CreateActionBar: React.FC = () => {
           </div>
         </div>
       </div>
-      <CreateClientModal
-        open={openClientModal}
-        onClose={()=> setOpenClientModal(false)}
-        onCreated={(res:any)=>{
-          const newId = res?.data?.client?.client_id || res?.data?.client_id;
-          if (newId) window.location.href = `/clients/${newId}`;
-        }}
-      />
     </div>
   );
 };

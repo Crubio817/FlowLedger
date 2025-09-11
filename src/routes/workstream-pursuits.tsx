@@ -40,6 +40,7 @@ import { Input } from '../ui/input.tsx';
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter } from '../ui/dialog.tsx';
 import FloatingActionButton from '../components/FloatingActionButton.tsx';
 import { PageTitleEditorial } from '../components/PageTitles.tsx';
+import StandardHeader from '../components/StandardHeader.tsx';
 import { formatUtc } from '../utils/date.ts';
 import { toast } from '../lib/toast.ts';
 
@@ -468,14 +469,18 @@ export default function PursuitsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <PageTitleEditorial
-          eyebrow="Workstream Management"
-          title="Pursuits"
-          subtitle="Active deals and opportunities"
-        />
+    <div>
+      {/* Standardized Header */}
+      <StandardHeader
+        title="Pursuits"
+        subtitle="Active deals and opportunities"
+        color="blue"
+        variant="comfortable"
+      />
+      
+      <div className="pb-6 space-y-6">
+        {/* View Controls */}
+        <div className="flex justify-end px-6">
         <div className="flex gap-3">
           <div className="flex items-center gap-1 bg-zinc-900/50 border border-zinc-800 rounded-lg p-1">
             <Button
@@ -501,7 +506,7 @@ export default function PursuitsPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="flex items-center gap-4 p-4 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl">
+      <div className="flex items-center gap-4 p-4 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl mx-6">
         <Search size={16} className="text-zinc-400" />
         <Input
           placeholder="Search pursuits..."
@@ -547,7 +552,7 @@ export default function PursuitsPage() {
 
       {/* Error State */}
       {error && (
-        <div className="text-center py-12 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl">
+        <div className="text-center py-12 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl mx-6">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-white mb-2">Failed to load pursuits</h2>
           <p className="text-zinc-400 mb-4">{error}</p>
@@ -561,7 +566,7 @@ export default function PursuitsPage() {
       {/* Main Content */}
       {viewMode === 'kanban' ? (
         /* Kanban View */
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-6 mx-6">
           {stageColumns.map(column => (
             <div key={column.key} className="space-y-4">
               <div className="flex items-center gap-2 p-3 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-lg">
@@ -584,7 +589,7 @@ export default function PursuitsPage() {
         </div>
       ) : (
         /* List View */
-        <div className="space-y-4">
+        <div className="space-y-4 mx-6">
           {filteredPursuits.length === 0 ? (
             <div className="text-center py-12 bg-zinc-900/30 backdrop-blur-sm border border-zinc-800 rounded-xl">
               <Target className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
@@ -605,7 +610,7 @@ export default function PursuitsPage() {
 
       {/* Pagination */}
       {total > limit && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mx-6">
           <div className="text-sm text-zinc-400">
             Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} pursuits
           </div>
@@ -649,6 +654,7 @@ export default function PursuitsPage() {
         label="Add Pursuit"
         icon={<Target size={20} />}
       />
+      </div>
     </div>
   );
 }

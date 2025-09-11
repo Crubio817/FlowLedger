@@ -1,6 +1,5 @@
 import React from 'react';
-import { Search as SearchIcon, Plus } from 'lucide-react';
-import { Button } from '../ui/button.tsx';
+import { Search as SearchIcon } from 'lucide-react';
 import { Input } from '../ui/input.tsx';
 
 type Props = {
@@ -9,7 +8,6 @@ type Props = {
 	availableTags?: string[];
 	selectedTags?: string[];
 	toggleTag?: (tag: string) => void;
-	onAddClick?: () => void;
 	onManageTags?: () => void;
 	className?: string;
 };
@@ -20,7 +18,6 @@ export const SearchBar: React.FC<Props> = ({
 	availableTags = [],
 	selectedTags = [],
 	toggleTag,
-	onAddClick,
 	onManageTags,
 	className = '',
 }) => {
@@ -33,10 +30,6 @@ export const SearchBar: React.FC<Props> = ({
 						{/* use input-search to disable focus glow and avoid visual artifacts */}
 						<Input value={value} onChange={onChange} placeholder="Search clients..." className="input-search pl-10 w-80" />
 					</div>
-
-					<Button variant="subtle" className="text-sky-400 hover:text-sky-300" onClick={() => onAddClick && onAddClick()} aria-label="Add client">
-						<Plus size={14} className="mr-2" /> Add
-					</Button>
 		</div>
 	);
 };

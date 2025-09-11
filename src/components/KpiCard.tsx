@@ -79,6 +79,59 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon, tint = '#4997D0',
             <div className="absolute inset-0 -z-10 rounded-xl blur-md opacity-40" style={{ background: `${tint}22` }} />
             <div className="w-5 h-5" style={{ color: tint }}>{icon}</div>
           </div>
+
+          {/* Additional Action Buttons */}
+          <button
+            className="relative isolate rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-300 hover:text-white transition-all group/btn hover:scale-105"
+            style={{
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}
+            onClick={() => console.log('View Details clicked')}
+          >
+            <div className="absolute inset-0 -z-10 rounded-lg blur-sm opacity-0 group-hover/btn:opacity-30 transition-opacity" style={{ background: tint }} />
+            View
+          </button>
+
+          <button
+            className="relative isolate rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-300 hover:text-white transition-all group/btn hover:scale-105"
+            style={{
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}
+            onClick={() => console.log('Export clicked')}
+          >
+            <div className="absolute inset-0 -z-10 rounded-lg blur-sm opacity-0 group-hover/btn:opacity-30 transition-opacity" style={{ background: tint }} />
+            Export
+          </button>
+
+          <button
+            className="relative isolate rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-300 hover:text-white transition-all group/btn hover:scale-105"
+            style={{
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}
+            onClick={() => console.log('Settings clicked')}
+          >
+            <div className="absolute inset-0 -z-10 rounded-lg blur-sm opacity-0 group-hover/btn:opacity-30 transition-opacity" style={{ background: tint }} />
+            ⚙️
+          </button>
+
+          <button
+            className="relative isolate rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-300 hover:text-white transition-all group/btn hover:scale-105"
+            style={{
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}
+            onClick={() => console.log('Refresh clicked')}
+          >
+            <div className="absolute inset-0 -z-10 rounded-lg blur-sm opacity-0 group-hover/btn:opacity-30 transition-opacity" style={{ background: tint }} />
+            🔄
+          </button>
         </div>
       </div>
   {/** progress bar removed by request **/}
